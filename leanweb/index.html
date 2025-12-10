@@ -9,16 +9,58 @@
 <div id="plot-target"></div>
 <pre id="out"></pre>
 
+<!-- Pyodide Loading Bar -->
+<div id="pyodide-loader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: Arial, sans-serif;">
+  <div style="width: 80%; max-width: 600px; text-align: center;">
+    <h2 style="margin-bottom: 20px; color: #333;">Loading Pyodide Runtime</h2>
+    <div id="loader-status" style="margin-bottom: 15px; color: #666; font-size: 14px;">Initializing...</div>
+    <div style="width: 100%; height: 30px; background: #e0e0e0; border-radius: 15px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+      <div id="loader-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">
+        <span id="loader-percent">0%</span>
+      </div>
+    </div>
+    <div id="loader-details" style="margin-top: 10px; color: #999; font-size: 12px; min-height: 20px;"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>
 <script>
+// Loading progress tracking
+const loader = {
+  element: document.getElementById('pyodide-loader'),
+  status: document.getElementById('loader-status'),
+  progress: document.getElementById('loader-progress'),
+  percent: document.getElementById('loader-percent'),
+  details: document.getElementById('loader-details'),
+  
+  update(percent, status, details) {
+    this.progress.style.width = percent + '%';
+    this.percent.textContent = Math.round(percent) + '%';
+    if (status) this.status.textContent = status;
+    if (details) this.details.textContent = details;
+  },
+  
+  hide() {
+    this.element.style.opacity = '0';
+    this.element.style.transition = 'opacity 0.5s ease';
+    setTimeout(() => {
+      this.element.style.display = 'none';
+    }, 500);
+  }
+};
+
 (async () => {
+  loader.update(5, 'Loading Pyodide core...', 'Downloading WASM runtime');
   const pyodide = await loadPyodide();
+  loader.update(20, 'Loading Python packages...', 'numpy, pandas, matplotlib, scipy, statsmodels, tqdm');
 
   await pyodide.loadPackage([
     "numpy","pandas","matplotlib","scipy","statsmodels","tqdm"
   ]);
+  loader.update(40, 'Loading micropip...', 'Package installer');
 
   await pyodide.loadPackage("micropip");
+  loader.update(50, 'Installing seaborn...', 'Data visualization library');
   await pyodide.runPythonAsync(`
 import micropip
 # install seaborn but don't re-resolve deps (matplotlib stays 3.8.4)
@@ -27,6 +69,7 @@ print("seaborn installed")
 `);
 
   // lqrt (for latest dabest); harmless if already installed
+  loader.update(60, 'Installing lqrt...', 'Optional dependency');
   await pyodide.runPythonAsync(`
 import micropip
 try:
@@ -37,6 +80,7 @@ except Exception as e:
   `);
 
   // numba stub (no-op decorators)
+  loader.update(70, 'Setting up numba compatibility...', 'Performance optimization stubs');
   await pyodide.runPythonAsync(`
 import sys, types
 m = types.ModuleType("numba")
@@ -50,12 +94,14 @@ sys.modules["numba"] = m
   `);
 
   // Install dabest without trying to upgrade matplotlib
+  loader.update(80, 'Installing DABEST...', 'Estimation statistics library');
   await pyodide.runPythonAsync(`
 import micropip
 await micropip.install("dabest", deps=False, reinstall=True)
   `);
 
   // Matplotlib backend target
+  loader.update(85, 'Configuring matplotlib...', 'Setting up plotting backend');
   await pyodide.runPythonAsync(`
 from js import document
 #import matplotlib
@@ -63,6 +109,7 @@ from js import document
 document.pyodideMplTarget = document.getElementById("plot-target")
   `);
 
+  loader.update(90, 'Setting up compatibility layers...', 'Matplotlib and numba patches');
 await pyodide.runPythonAsync(`
 # Matplotlib compatibility shim for older versions (<=3.9)
 import matplotlib
@@ -81,6 +128,7 @@ Axes.violinplot = _violinplot_shim
 print("Patched Axes.violinplot to accept orientation -> vert")
 `);
   // 5) Your demo
+  loader.update(95, 'Running initialization demo...', 'Testing DABEST functionality');
   const out = await pyodide.runPythonAsync(`
 import numpy as np, pandas as pd, dabest, matplotlib.pyplot as plt
 import matplotlib
@@ -105,6 +153,12 @@ plt.tight_layout()
 plt.show()
   `);
   document.getElementById("out").textContent = out;
+  
+  // Hide loader when everything is ready
+  loader.update(100, 'Ready!', 'Pyodide runtime loaded successfully');
+  setTimeout(() => {
+    loader.hide();
+  }, 500);
 })();
 </script>
 
