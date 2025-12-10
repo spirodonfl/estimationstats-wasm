@@ -1,0 +1,79 @@
+<!-- Sample content page -->
+<div data-content>
+  <div class="page-title">
+    Sample Page
+  </div>
+  <div class="row">
+    <div class="col content">
+      <p>This is a sample content page loaded dynamically!</p>
+      <p>The URL for this page is <code>/sample</code> or <code>/sample.html</code>.</p>
+      <p>This content was fetched from <code>content/sample.html</code> and injected into the main content area.</p>
+      
+      <div class="feature-box">
+        <h3>Features of this routing system:</h3>
+        <ul>
+          <li>✅ Real URLs (no hash routing)</li>
+          <li>✅ Works on GitHub Pages</li>
+          <li>✅ Pyodide/WASM loads once and persists</li>
+          <li>✅ CSS and JavaScript from content files are automatically injected</li>
+          <li>✅ Browser back/forward buttons work correctly</li>
+        </ul>
+      </div>
+      
+      <p><a href="/">← Back to home</a></p>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Sample page specific styles */
+  .feature-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin: 30px 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+  
+  .feature-box h3 {
+    margin-top: 0;
+    color: white;
+  }
+  
+  .feature-box ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  
+  .feature-box li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+  
+  .feature-box li:last-child {
+    border-bottom: none;
+  }
+  
+  code {
+    background-color: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+  }
+</style>
+
+<script>
+  console.log('Sample page loaded!');
+  
+  // Example: Add some interactivity
+  document.addEventListener('DOMContentLoaded', function() {
+    const featureBox = document.querySelector('.feature-box');
+    if (featureBox) {
+      featureBox.addEventListener('click', function() {
+        alert('You clicked the feature box!');
+      });
+    }
+  });
+</script>
+

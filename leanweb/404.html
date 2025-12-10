@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Loading...</title>
+    <script>
+        // GitHub Pages 404.html trick for client-side routing
+        // When GitHub Pages serves this 404.html, the browser URL still shows the original pathname
+        // We preserve it and redirect to index.html
+        // index.html will read it and restore the URL using history API
+        
+        var currentPath = window.location.pathname;
+        var currentSearch = window.location.search;
+        var currentHash = window.location.hash;
+        
+        // Only preserve if it's not already index.html or root
+        if (currentPath !== '/' && currentPath !== '/index.html' && currentPath !== '/404.html') {
+            // Store the original path for index.html to read
+            sessionStorage.setItem('__original_path', currentPath);
+            sessionStorage.setItem('__original_search', currentSearch);
+            sessionStorage.setItem('__original_hash', currentHash);
+        }
+        
+        // Redirect to index.html (the pathname will be restored by index.html's router)
+        window.location.replace('/index.html' + currentSearch + currentHash);
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+    <noscript>
+        <p>JavaScript is required for this site. Please enable JavaScript and refresh the page.</p>
+        <p><a href="/index.html">Go to home page</a></p>
+    </noscript>
+</body>
+</html>
+

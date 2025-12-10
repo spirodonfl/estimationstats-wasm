@@ -1,0 +1,95 @@
+<!-- Demo page with more complex content -->
+<div data-content>
+  <div class="page-title">
+    Demo Page
+  </div>
+  <div class="row">
+    <div class="col content">
+      <p>This is a demo page showcasing the content injection system.</p>
+      
+      <div class="demo-container">
+        <h3>Interactive Demo</h3>
+        <button id="demo-button" class="btn btn-large">Click Me!</button>
+        <div id="demo-output" style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 5px; display: none;">
+          <p>Button was clicked! This demonstrates that JavaScript from content files works correctly.</p>
+        </div>
+      </div>
+      
+      <div class="demo-container" style="margin-top: 30px;">
+        <h3>Dynamic Content</h3>
+        <p>Current time: <strong id="current-time"></strong></p>
+        <p>Page loaded at: <strong id="load-time"></strong></p>
+      </div>
+      
+      <p style="margin-top: 30px;"><a href="/">← Back to home</a> | <a href="/sample">Sample Page</a></p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .demo-container {
+    padding: 20px;
+    border: 2px solid #2196F3;
+    border-radius: 8px;
+    margin: 20px 0;
+    background: #f9f9f9;
+  }
+  
+  .demo-container h3 {
+    margin-top: 0;
+    color: #1976D2;
+  }
+  
+  #demo-button {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+  }
+  
+  #demo-button:hover {
+    background-color: #1976D2;
+  }
+  
+  #demo-button:active {
+    background-color: #0d47a1;
+  }
+</style>
+
+<script>
+  console.log('Demo page loaded');
+  
+  // Set load time
+  const loadTime = new Date().toLocaleString();
+  document.getElementById('load-time').textContent = loadTime;
+  
+  // Update current time every second
+  function updateTime() {
+    const now = new Date().toLocaleString();
+    document.getElementById('current-time').textContent = now;
+  }
+  
+  updateTime();
+  setInterval(updateTime, 1000);
+  
+  // Button click handler
+  document.addEventListener('DOMContentLoaded', function() {
+    const button = document.getElementById('demo-button');
+    const output = document.getElementById('demo-output');
+    
+    if (button && output) {
+      button.addEventListener('click', function() {
+        output.style.display = 'block';
+        button.textContent = 'Clicked!';
+        setTimeout(function() {
+          button.textContent = 'Click Me!';
+        }, 2000);
+      });
+    }
+  });
+</script>
+
