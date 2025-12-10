@@ -114,14 +114,25 @@ plt.show()
   'use strict';
   
   // Content router configuration
-  // Get the base path relative to current page location
-  const getBasePath = () => {
-    const path = window.location.pathname;
-    // Remove filename (index.html, etc.) to get directory
-    const dir = path.substring(0, path.lastIndexOf('/') + 1);
-    // Ensure it ends with a slash and is relative
-    return dir || './';
-  };
+  // Store the base path when page loads (where index.html is located)
+  // This ensures we always use the correct base path, even when navigating
+  // We detect it from the initial pathname when the page loads
+  const INITIAL_PATH = window.location.pathname;
+  const BASE_PATH = (() => {
+    // If we're on index.html, get its directory
+    if (INITIAL_PATH.endsWith('/index.html') || INITIAL_PATH.endsWith('index.html')) {
+      return INITIAL_PATH.substring(0, INITIAL_PATH.lastIndexOf('/') + 1);
+    }
+    // If path ends with /, that's our base
+    if (INITIAL_PATH.endsWith('/')) {
+      return INITIAL_PATH;
+    }
+    // Otherwise, assume we're in a directory and add /
+    return INITIAL_PATH + '/';
+  })();
+  
+  // Get the base path (always returns the stored base path)
+  const getBasePath = () => BASE_PATH;
   
   // Get base path for assets (images, fonts, etc.)
   const getAssetPath = (relativePath) => {
@@ -150,21 +161,36 @@ plt.show()
       path = window.location.pathname;
     }
     
-    // Normalize the path
-    if (path === '/' || path === '/index.html' || path.endsWith('/index.html')) {
+    // Normalize the path - handle root and index.html
+    if (path === '/' || path === '/index.html') {
       return DEFAULT_CONTENT;
     }
     
-    // Remove leading slash and .html extension if present
-    path = path.replace(/^\//, '').replace(/\.html$/, '').replace(/\/$/, '');
+    // Remove the base path from the current path to get just the route
+    // BASE_PATH is like "/estimationstats-wasm/leanweb/" or "./"
+    let route = path;
+    if (BASE_PATH !== './' && BASE_PATH !== '/') {
+      // Remove the base path prefix
+      if (route.startsWith(BASE_PATH)) {
+        route = route.substring(BASE_PATH.length);
+      }
+    } else if (BASE_PATH === '/') {
+      // If base is root, just remove leading slash
+      route = route.replace(/^\//, '');
+    } else {
+      // For relative base path, we need to handle it differently
+      // Just remove leading slash for now
+      route = route.replace(/^\//, '');
+    }
     
-    // Extract just the filename/route, not the full path
-    // If path contains slashes, get the last part
-    const parts = path.split('/');
-    const route = parts[parts.length - 1];
+    // Remove .html extension if present
+    route = route.replace(/\.html$/, '');
     
-    // If empty, use default
-    if (!route) {
+    // Remove trailing slash
+    route = route.replace(/\/$/, '');
+    
+    // If route is empty, use default
+    if (!route || route === '') {
       return DEFAULT_CONTENT;
     }
     
@@ -343,20 +369,28 @@ plt.show()
         const url = new URL(link.href, window.location.origin);
         // Only handle same-origin links
         if (url.origin === window.location.origin) {
-          const path = url.pathname;
+          let path = url.pathname;
+          
+          // If path is absolute (starts with /) but not our base path, rewrite it
+          if (path.startsWith('/') && !path.startsWith(BASE_PATH) && BASE_PATH !== '/' && BASE_PATH !== './') {
+            // Rewrite absolute paths to be relative to our base
+            // e.g., /sample -> /estimationstats-wasm/leanweb/sample
+            path = BASE_PATH + path.substring(1);
+          }
+          
           // Handle all internal links (except direct .html file links to actual files)
-          // For now, we'll handle paths that don't end in .html or are root
-          if (path !== '/' && path !== '/index.html') {
+          if (path !== '/' && path !== '/index.html' && path !== BASE_PATH && path !== BASE_PATH + 'index.html') {
             // Check if it's a content route (doesn't end with .html or is a known content path)
             if (!path.match(/\.(html|css|js|png|jpg|jpeg|gif|svg|pdf|json)$/i)) {
               e.preventDefault();
               history.pushState(null, '', path);
               handleNavigation();
             }
-          } else if (path === '/' || path === '/index.html') {
-            // Handle root/home links
+          } else if (path === '/' || path === '/index.html' || path === BASE_PATH || path === BASE_PATH + 'index.html') {
+            // Handle root/home links - rewrite to our base path
             e.preventDefault();
-            history.pushState(null, '', '/');
+            const homePath = BASE_PATH === './' ? '/' : BASE_PATH;
+            history.pushState(null, '', homePath);
             handleNavigation();
           }
         }
