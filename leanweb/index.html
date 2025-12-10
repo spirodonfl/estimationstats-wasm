@@ -114,7 +114,22 @@ plt.show()
   'use strict';
   
   // Content router configuration
-  const CONTENT_DIR = 'content'; // Directory where content files are stored
+  // Get the base path relative to current page location
+  const getBasePath = () => {
+    const path = window.location.pathname;
+    // Remove filename (index.html, etc.) to get directory
+    const dir = path.substring(0, path.lastIndexOf('/') + 1);
+    // Ensure it ends with a slash and is relative
+    return dir || './';
+  };
+  
+  // Get base path for assets (images, fonts, etc.)
+  const getAssetPath = (relativePath) => {
+    const base = getBasePath();
+    // Remove leading ./ if present and ensure proper joining
+    const cleanPath = relativePath.replace(/^\.\//, '');
+    return base + cleanPath;
+  };
   const DEFAULT_CONTENT = 'default'; // Default content file (without .html)
   
   // Get the current route
@@ -136,19 +151,24 @@ plt.show()
     }
     
     // Normalize the path
-    if (path === '/' || path === '/index.html') {
+    if (path === '/' || path === '/index.html' || path.endsWith('/index.html')) {
       return DEFAULT_CONTENT;
     }
     
     // Remove leading slash and .html extension if present
-    path = path.replace(/^\//, '').replace(/\.html$/, '');
+    path = path.replace(/^\//, '').replace(/\.html$/, '').replace(/\/$/, '');
+    
+    // Extract just the filename/route, not the full path
+    // If path contains slashes, get the last part
+    const parts = path.split('/');
+    const route = parts[parts.length - 1];
     
     // If empty, use default
-    if (!path) {
+    if (!route) {
       return DEFAULT_CONTENT;
     }
     
-    return path;
+    return route;
   }
   
   // Extract content from HTML string
@@ -233,7 +253,8 @@ plt.show()
   
   // Load and inject content
   async function loadContent(route) {
-    const contentFile = `${CONTENT_DIR}/${route}.html`;
+    const basePath = getBasePath();
+    const contentFile = `${basePath}content/${route}.html`;
     
     try {
       // Show loading state (optional)
