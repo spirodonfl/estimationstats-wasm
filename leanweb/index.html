@@ -7,30 +7,16 @@
 </head>
 <body>
 
-<div id="plot-target"></div>
-<pre id="out"></pre>
-
-<!-- Pyodide Loading Bar (inline, not overlay) -->
-<div id="pyodide-loader" style="width: 100%; max-width: 600px; margin: 20px auto; padding: 20px; text-align: center; font-family: Arial, sans-serif; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
-  <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">Loading Pyodide Runtime</h3>
-  <div id="loader-status" style="margin-bottom: 10px; color: #666; font-size: 14px;">Initializing...</div>
-  <div style="width: 100%; height: 24px; background: #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
-    <div id="loader-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">
-      <span id="loader-percent">0%</span>
-    </div>
-  </div>
-  <div id="loader-details" style="margin-top: 8px; color: #999; font-size: 12px; min-height: 18px;"></div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>
 <script>
 // Loading progress tracking
 const loader = {
-  element: document.getElementById('pyodide-loader'),
-  status: document.getElementById('loader-status'),
-  progress: document.getElementById('loader-progress'),
-  percent: document.getElementById('loader-percent'),
-  details: document.getElementById('loader-details'),
+  get element() { return document.getElementById('pyodide-loader'); },
+  get status() { return document.getElementById('loader-status'); },
+  get progress() { return document.getElementById('loader-progress'); },
+  get percent() { return document.getElementById('loader-percent'); },
+  get details() { return document.getElementById('loader-details'); },
   
   update(percent, status, details) {
     this.progress.style.width = percent + '%';
@@ -48,7 +34,11 @@ const loader = {
   }
 };
 
-(async () => {
+async function loadPyodideRuntime() {
+  // Hide the start button and show the loader
+  document.getElementById('start-pyodide-btn').style.display = 'none';
+  document.getElementById('pyodide-loader').style.display = 'block';
+  
   loader.update(5, 'Loading Pyodide core...', 'Downloading WASM runtime');
   const pyodide = await loadPyodide();
   loader.update(20, 'Loading Python packages...', 'numpy, pandas, matplotlib, scipy, statsmodels, tqdm');
@@ -158,7 +148,7 @@ plt.show()
   setTimeout(() => {
     loader.hide();
   }, 500);
-})();
+}
 </script>
 
 <!-- Content Router for GitHub Pages -->
@@ -725,6 +715,32 @@ plt.show()
             </span>
           </div>
         </div>
+      </div>
+
+      <!-- Pyodide Results Section -->
+      <div id="pyodide-section" style="text-align: center; margin: 40px 0;">
+        <!-- Start Button -->
+        <button id="start-pyodide-btn" class="btn btn-large" onclick="loadPyodideRuntime()" style="background-color: #4CAF50; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer;">
+          Load DABEST Runtime
+        </button>
+
+        <!-- Pyodide Loading Bar (hidden by default) -->
+        <div id="pyodide-loader" style="display: none; width: 100%; max-width: 600px; margin: 20px auto; padding: 20px; text-align: center; font-family: Arial, sans-serif; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
+          <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">Loading Pyodide Runtime</h3>
+          <div id="loader-status" style="margin-bottom: 10px; color: #666; font-size: 14px;">Initializing...</div>
+          <div style="width: 100%; height: 24px; background: #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+            <div id="loader-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">
+              <span id="loader-percent">0%</span>
+            </div>
+          </div>
+          <div id="loader-details" style="margin-top: 8px; color: #999; font-size: 12px; min-height: 18px;"></div>
+        </div>
+
+        <!-- Plot output -->
+        <div id="plot-target" style="margin: 20px auto; max-width: 800px;"></div>
+
+        <!-- Text output -->
+        <pre id="out" style="text-align: left; max-width: 800px; margin: 20px auto; background: #f5f5f5; padding: 15px; border-radius: 8px; overflow-x: auto;"></pre>
       </div>
 
     </div>
