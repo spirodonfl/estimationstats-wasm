@@ -77,19 +77,17 @@
   setInterval(updateTime, 1000);
   
   // Button click handler (runs immediately since DOM is already ready)
-  (function() {
-    const button = document.getElementById('demo-button');
-    const output = document.getElementById('demo-output');
-    
-    if (button && output) {
-      button.addEventListener('click', function() {
-        output.style.display = 'block';
-        button.textContent = 'Clicked!';
-        setTimeout(function() {
-          button.textContent = 'Click Me!';
-        }, 2000);
-      });
-    }
-  })();
+  var button = document.getElementById('demo-button');
+  var output = document.getElementById('demo-output');
+  
+  if (button && output) {
+    button.addEventListener('click', function() {
+      output.style.display = 'block';
+      button.textContent = 'Clicked!';
+      setTimeout(function() {
+        button.textContent = 'Click Me!';
+      }, 2000);
+    });
+  }
 </script>
 
