@@ -362,6 +362,11 @@ plt.show()
     }
     
     const route = getCurrentRoute();
+    // Don't load external content for the default route - index.html already has the content
+    if (route === DEFAULT_CONTENT) {
+      console.log('Router: On default route, keeping existing content');
+      return;
+    }
     handleNavigation();
     
     window.addEventListener('popstate', handleNavigation);
