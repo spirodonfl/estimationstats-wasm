@@ -189,6 +189,7 @@ plt.show()
     return base + cleanPath;
   };
   const DEFAULT_CONTENT = 'default';
+  let originalHomeContent = null; // Store original home page content
   
   function getCurrentRoute() {
     let path = sessionStorage.getItem('__original_path');
@@ -297,13 +298,28 @@ plt.show()
   
   async function loadContent(route) {
     const basePath = getBasePath();
+    const mainContent = document.querySelector('.main-content') || document.getElementById('app');
+    
+    // If navigating to home/default, restore original content
+    if (route === DEFAULT_CONTENT && originalHomeContent) {
+      console.log('Restoring original home content');
+      if (mainContent) {
+        mainContent.innerHTML = originalHomeContent;
+        mainContent.style.opacity = '1';
+      }
+      return;
+    }
+    
     const contentFile = `${basePath}content/${route}.html`;
     
     console.log('loadContent - route:', route, 'basePath:', basePath, 'contentFile:', contentFile);
     
     try {
-      const mainContent = document.querySelector('.main-content') || document.getElementById('app');
       if (mainContent) {
+        // Save original home content before first navigation away
+        if (!originalHomeContent) {
+          originalHomeContent = mainContent.innerHTML;
+        }
         mainContent.style.opacity = '0.5';
       }
       
