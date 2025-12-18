@@ -154,6 +154,11 @@ async function runDemo() {
     demoBtn.disabled = true;
   }
   
+  // Clear previous output and re-register plot target
+  document.getElementById('plot-target').innerHTML = '';
+  document.getElementById('out').textContent = '';
+  document.pyodideMplTarget = document.getElementById('plot-target');
+  
   try {
     const out = await pyodideInstance.runPythonAsync(`
 import numpy as np, pandas as pd, dabest, matplotlib.pyplot as plt
