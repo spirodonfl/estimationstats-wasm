@@ -70,7 +70,9 @@
   // Update current time every second
   function updateTime() {
     const now = new Date().toLocaleString();
-    document.getElementById('current-time').textContent = now;
+    if (document.getElementById('current-time')) {
+      document.getElementById('current-time').textContent = now;
+    }
   }
   
   updateTime();
