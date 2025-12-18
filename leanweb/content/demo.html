@@ -76,8 +76,8 @@
   updateTime();
   setInterval(updateTime, 1000);
   
-  // Button click handler
-  document.addEventListener('DOMContentLoaded', function() {
+  // Button click handler (runs immediately since DOM is already ready)
+  (function() {
     const button = document.getElementById('demo-button');
     const output = document.getElementById('demo-output');
     
@@ -90,6 +90,6 @@
         }, 2000);
       });
     }
-  });
+  })();
 </script>
 
