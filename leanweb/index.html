@@ -12,6 +12,7 @@
 <script>
 // Loading progress tracking
 let pyodideLoaded = false;
+let pyodideInstance = null;
 
 const loader = {
   get element() { return document.getElementById('pyodide-loader'); },
@@ -45,17 +46,17 @@ async function loadPyodideRuntime() {
     loader.update(5, 'Loading Pyodide core...', 'Downloading WASM runtime');
     // Small delay to ensure UI updates before heavy loading starts
     await new Promise(r => setTimeout(r, 100));
-    const pyodide = await loadPyodide();
+    pyodideInstance = await loadPyodide();
   loader.update(20, 'Loading Python packages...', 'numpy, pandas, matplotlib, scipy, statsmodels, tqdm');
 
-  await pyodide.loadPackage([
+  await pyodideInstance.loadPackage([
     "numpy","pandas","matplotlib","scipy","statsmodels","tqdm"
   ]);
   loader.update(40, 'Loading micropip...', 'Package installer');
 
-  await pyodide.loadPackage("micropip");
+  await pyodideInstance.loadPackage("micropip");
   loader.update(50, 'Installing seaborn...', 'Data visualization library');
-  await pyodide.runPythonAsync(`
+  await pyodideInstance.runPythonAsync(`
 import micropip
 # install seaborn but don't re-resolve deps (matplotlib stays 3.8.4)
 await micropip.install("seaborn", deps=False)
@@ -64,7 +65,7 @@ print("seaborn installed")
 
   // lqrt (for latest dabest); harmless if already installed
   loader.update(60, 'Installing lqrt...', 'Optional dependency');
-  await pyodide.runPythonAsync(`
+  await pyodideInstance.runPythonAsync(`
 import micropip
 try:
     await micropip.install("lqrt")
@@ -75,7 +76,7 @@ except Exception as e:
 
   // numba stub (no-op decorators)
   loader.update(70, 'Setting up numba compatibility...', 'Performance optimization stubs');
-  await pyodide.runPythonAsync(`
+  await pyodideInstance.runPythonAsync(`
 import sys, types
 m = types.ModuleType("numba")
 def _noop(*dargs, **dkwargs):
@@ -89,14 +90,14 @@ sys.modules["numba"] = m
 
   // Install dabest without trying to upgrade matplotlib
   loader.update(80, 'Installing DABEST...', 'Estimation statistics library');
-  await pyodide.runPythonAsync(`
+  await pyodideInstance.runPythonAsync(`
 import micropip
 await micropip.install("dabest", deps=False, reinstall=True)
   `);
 
   // Matplotlib backend target
   loader.update(85, 'Configuring matplotlib...', 'Setting up plotting backend');
-  await pyodide.runPythonAsync(`
+  await pyodideInstance.runPythonAsync(`
 from js import document
 #import matplotlib
 #matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
@@ -104,7 +105,7 @@ document.pyodideMplTarget = document.getElementById("plot-target")
   `);
 
   loader.update(90, 'Setting up compatibility layers...', 'Matplotlib and numba patches');
-await pyodide.runPythonAsync(`
+  await pyodideInstance.runPythonAsync(`
 # Matplotlib compatibility shim for older versions (<=3.9)
 import matplotlib
 from matplotlib.axes import Axes
@@ -121,9 +122,40 @@ def _violinplot_shim(self, dataset, *args, **kwargs):
 Axes.violinplot = _violinplot_shim
 print("Patched Axes.violinplot to accept orientation -> vert")
 `);
-  // 5) Your demo
-  loader.update(95, 'Running initialization demo...', 'Testing DABEST functionality');
-  const out = await pyodide.runPythonAsync(`
+
+  // Mark as loaded and enable demo button
+  pyodideLoaded = true;
+  loader.update(100, 'Ready!', 'Pyodide runtime loaded successfully');
+  setTimeout(() => {
+    loader.hide();
+    // Enable the demo button
+    const demoBtn = document.getElementById('run-demo-btn');
+    if (demoBtn) {
+      demoBtn.disabled = false;
+      demoBtn.style.backgroundColor = '#2196F3';
+      demoBtn.style.cursor = 'pointer';
+    }
+  }, 500);
+  } catch (error) {
+    console.error('Error loading Pyodide:', error);
+    loader.update(0, 'Error loading Pyodide', error.message);
+  }
+}
+
+async function runDemo() {
+  if (!pyodideLoaded || !pyodideInstance) {
+    alert('Please load the DABEST runtime first.');
+    return;
+  }
+  
+  const demoBtn = document.getElementById('run-demo-btn');
+  if (demoBtn) {
+    demoBtn.textContent = 'Running...';
+    demoBtn.disabled = true;
+  }
+  
+  try {
+    const out = await pyodideInstance.runPythonAsync(`
 import numpy as np, pandas as pd, dabest, matplotlib.pyplot as plt
 import matplotlib
 
@@ -141,22 +173,24 @@ est = d.mean_diff
 
 print(est)
 
-fig = est.plot(raw_label="value", contrast_label="mean diff")  # or swarm_label="value"
+fig = est.plot(raw_label="value", contrast_label="mean diff")
 plt.title("DABEST in Pyodide")
 plt.tight_layout()
 plt.show()
-  `);
-  document.getElementById("out").textContent = out;
-  
-  // Hide loader when everything is ready
-  pyodideLoaded = true;
-  loader.update(100, 'Ready!', 'Pyodide runtime loaded successfully');
-  setTimeout(() => {
-    loader.hide();
-  }, 500);
+    `);
+    document.getElementById("out").textContent = out;
+    
+    if (demoBtn) {
+      demoBtn.textContent = 'Run Demo';
+      demoBtn.disabled = false;
+    }
   } catch (error) {
-    console.error('Error loading Pyodide:', error);
-    loader.update(0, 'Error loading Pyodide', error.message);
+    console.error('Error running demo:', error);
+    document.getElementById("out").textContent = 'Error: ' + error.message;
+    if (demoBtn) {
+      demoBtn.textContent = 'Run Demo';
+      demoBtn.disabled = false;
+    }
   }
 }
 </script>
@@ -309,7 +343,7 @@ plt.show()
       if (mainContent) {
         mainContent.innerHTML = originalHomeContent;
         mainContent.style.opacity = '1';
-        // If Pyodide was already loaded, hide the button and show "Loaded" message
+        // If Pyodide was already loaded, update button states
         if (typeof pyodideLoaded !== 'undefined' && pyodideLoaded) {
           const btn = document.getElementById('start-pyodide-btn');
           if (btn) {
@@ -317,6 +351,12 @@ plt.show()
             btn.disabled = true;
             btn.style.backgroundColor = '#888';
             btn.style.cursor = 'default';
+          }
+          const demoBtn = document.getElementById('run-demo-btn');
+          if (demoBtn) {
+            demoBtn.disabled = false;
+            demoBtn.style.backgroundColor = '#2196F3';
+            demoBtn.style.cursor = 'pointer';
           }
         }
       }
@@ -487,8 +527,13 @@ plt.show()
       <!-- Pyodide Results Section -->
       <div id="pyodide-section" style="text-align: center; margin: 40px 0;">
         <!-- Start Button -->
-        <button id="start-pyodide-btn" class="btn btn-large" onclick="loadPyodideRuntime()" style="background-color: #4CAF50; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer;">
+        <button id="start-pyodide-btn" class="btn btn-large" onclick="loadPyodideRuntime()" style="background-color: #4CAF50; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px;">
           Load DABEST Runtime
+        </button>
+        
+        <!-- Demo Button (disabled until runtime loaded) -->
+        <button id="run-demo-btn" class="btn btn-large" onclick="runDemo()" disabled style="background-color: #888; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 8px; cursor: not-allowed;">
+          Run Demo
         </button>
 
         <!-- Pyodide Loading Bar (hidden by default) -->
