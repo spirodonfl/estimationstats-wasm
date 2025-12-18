@@ -11,6 +11,8 @@
 <script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>
 <script>
 // Loading progress tracking
+let pyodideLoaded = false;
+
 const loader = {
   get element() { return document.getElementById('pyodide-loader'); },
   get status() { return document.getElementById('loader-status'); },
@@ -20,7 +22,7 @@ const loader = {
   
   update(percent, status, details) {
     this.progress.style.width = percent + '%';
-    this.percent.textContent = Math.round(percent) + '%';
+    this.percent.textContent = 'Loading...';
     if (status) this.status.textContent = status;
     if (details) this.details.textContent = details;
   },
@@ -147,6 +149,7 @@ plt.show()
   document.getElementById("out").textContent = out;
   
   // Hide loader when everything is ready
+  pyodideLoaded = true;
   loader.update(100, 'Ready!', 'Pyodide runtime loaded successfully');
   setTimeout(() => {
     loader.hide();
@@ -306,6 +309,16 @@ plt.show()
       if (mainContent) {
         mainContent.innerHTML = originalHomeContent;
         mainContent.style.opacity = '1';
+        // If Pyodide was already loaded, hide the button and show "Loaded" message
+        if (typeof pyodideLoaded !== 'undefined' && pyodideLoaded) {
+          const btn = document.getElementById('start-pyodide-btn');
+          if (btn) {
+            btn.textContent = 'DABEST Runtime Loaded';
+            btn.disabled = true;
+            btn.style.backgroundColor = '#888';
+            btn.style.cursor = 'default';
+          }
+        }
       }
       return;
     }
