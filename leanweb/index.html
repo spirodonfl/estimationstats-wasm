@@ -178,10 +178,12 @@ est = d.mean_diff
 
 print(est)
 
+plt.close('all')  # Close any previous figures
 fig = est.plot(raw_label="value", contrast_label="mean diff")
 plt.title("DABEST in Pyodide")
 plt.tight_layout()
 plt.show()
+plt.close('all')  # Clean up after showing
     `);
     document.getElementById("out").textContent = out;
     
