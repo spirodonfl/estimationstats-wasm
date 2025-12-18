@@ -35,12 +35,15 @@ const loader = {
 };
 
 async function loadPyodideRuntime() {
-  // Hide the start button and show the loader
-  document.getElementById('start-pyodide-btn').style.display = 'none';
-  document.getElementById('pyodide-loader').style.display = 'block';
-  
-  loader.update(5, 'Loading Pyodide core...', 'Downloading WASM runtime');
-  const pyodide = await loadPyodide();
+  try {
+    // Hide the start button and show the loader
+    document.getElementById('start-pyodide-btn').style.display = 'none';
+    document.getElementById('pyodide-loader').style.display = 'block';
+    
+    loader.update(5, 'Loading Pyodide core...', 'Downloading WASM runtime');
+    // Small delay to ensure UI updates before heavy loading starts
+    await new Promise(r => setTimeout(r, 100));
+    const pyodide = await loadPyodide();
   loader.update(20, 'Loading Python packages...', 'numpy, pandas, matplotlib, scipy, statsmodels, tqdm');
 
   await pyodide.loadPackage([
@@ -148,6 +151,10 @@ plt.show()
   setTimeout(() => {
     loader.hide();
   }, 500);
+  } catch (error) {
+    console.error('Error loading Pyodide:', error);
+    loader.update(0, 'Error loading Pyodide', error.message);
+  }
 }
 </script>
 
