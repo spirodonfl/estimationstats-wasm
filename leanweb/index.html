@@ -1,11 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>DABEST via Pyodide</title>
-<link rel="stylesheet" href="./styles.css">
+  <meta charset="utf-8" />
+  <title>DABEST via Pyodide</title>
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+
 <div id="plot-target"></div>
 <pre id="out"></pre>
 
@@ -166,89 +167,63 @@ plt.show()
   'use strict';
   
   // Content router configuration
-  // Store the base path when page loads (where index.html is located)
-  // This ensures we always use the correct base path, even when navigating
-  // We detect it from the initial pathname when the page loads
   const INITIAL_PATH = window.location.pathname;
   const BASE_PATH = (() => {
     let path = INITIAL_PATH;
-    // If we're on index.html, get its directory
     if (path.endsWith('index.html')) {
       path = path.substring(0, path.lastIndexOf('/') + 1);
     }
-    // Ensure path ends with /
     if (!path.endsWith('/')) {
       path = path + '/';
     }
-    // If we're at root, use './' for relative paths
     if (path === '/') {
       return './';
     }
     return path;
   })();
   
-  // Debug: log BASE_PATH (can be removed in production)
   console.log('BASE_PATH:', BASE_PATH, 'INITIAL_PATH:', INITIAL_PATH);
   
-  // Get the base path (always returns the stored base path)
   const getBasePath = () => BASE_PATH;
   
-  // Get base path for assets (images, fonts, etc.)
   const getAssetPath = (relativePath) => {
     const base = getBasePath();
-    // Remove leading ./ if present and ensure proper joining
     const cleanPath = relativePath.replace(/^\.\//, '');
     return base + cleanPath;
   };
-  const DEFAULT_CONTENT = 'default'; // Default content file (without .html)
+  const DEFAULT_CONTENT = 'default';
   
-  // Get the current route
   function getCurrentRoute() {
-    // Check if we have a preserved path from 404.html
     let path = sessionStorage.getItem('__original_path');
     if (path) {
-      // Restore the URL using history API
       const search = sessionStorage.getItem('__original_search') || '';
       const hash = sessionStorage.getItem('__original_hash') || '';
       history.replaceState(null, '', path + search + hash);
-      // Clear the stored path
       sessionStorage.removeItem('__original_path');
       sessionStorage.removeItem('__original_search');
       sessionStorage.removeItem('__original_hash');
     } else {
-      // Use current pathname
       path = window.location.pathname;
     }
     
-    // Normalize the path - handle root and index.html
     if (path === '/' || path === '/index.html') {
       return DEFAULT_CONTENT;
     }
     
-    // Remove the base path from the current path to get just the route
-    // BASE_PATH is like "/estimationstats-wasm/leanweb/" or "./"
     let route = path;
     if (BASE_PATH !== './' && BASE_PATH !== '/') {
-      // Remove the base path prefix
       if (route.startsWith(BASE_PATH)) {
         route = route.substring(BASE_PATH.length);
       }
     } else if (BASE_PATH === '/') {
-      // If base is root, just remove leading slash
       route = route.replace(/^\//, '');
     } else {
-      // For relative base path, we need to handle it differently
-      // Just remove leading slash for now
       route = route.replace(/^\//, '');
     }
     
-    // Remove .html extension if present
     route = route.replace(/\.html$/, '');
-    
-    // Remove trailing slash
     route = route.replace(/\/$/, '');
     
-    // If route is empty, use default
     if (!route || route === '') {
       return DEFAULT_CONTENT;
     }
@@ -256,7 +231,6 @@ plt.show()
     return route;
   }
   
-  // Extract content from HTML string
   function extractContent(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
@@ -267,39 +241,32 @@ plt.show()
       scripts: []
     };
     
-    // Extract body content (or a specific container if marked)
     const bodyContent = doc.body;
     const contentContainer = bodyContent.querySelector('[data-content]') || bodyContent;
     
-    // Get all style tags
     const styleTags = doc.querySelectorAll('style');
     styleTags.forEach(style => {
       result.styles.push(style.textContent || style.innerHTML);
     });
     
-    // Get all script tags (but exclude external scripts, we'll handle those separately)
     const scriptTags = doc.querySelectorAll('script:not([src])');
     scriptTags.forEach(script => {
       result.scripts.push(script.textContent || script.innerHTML);
     });
     
-    // Get external script sources
     const externalScripts = doc.querySelectorAll('script[src]');
     externalScripts.forEach(script => {
       result.scripts.push({ src: script.src, type: 'external' });
     });
     
-    // Get the HTML content
     result.html = contentContainer.innerHTML;
     
     return result;
   }
   
-  // Inject styles into the document
   function injectStyles(styles) {
     styles.forEach((styleContent, index) => {
       const styleId = `__injected_style_${Date.now()}_${index}`;
-      // Remove old injected styles for this route (optional cleanup)
       const oldStyle = document.getElementById(styleId);
       if (oldStyle) {
         oldStyle.remove();
@@ -312,23 +279,18 @@ plt.show()
     });
   }
   
-  // Execute scripts
   function executeScripts(scripts) {
     scripts.forEach((scriptContent, index) => {
       if (typeof scriptContent === 'object' && scriptContent.type === 'external') {
-        // Handle external scripts
         const script = document.createElement('script');
         script.src = scriptContent.src;
         script.async = true;
         document.head.appendChild(script);
       } else {
-        // Execute inline scripts
         try {
-          // Use Function constructor to execute in global scope
           const script = document.createElement('script');
           script.textContent = scriptContent;
           document.head.appendChild(script);
-          // Note: We append and then could remove, but keeping it allows debugging
         } catch (e) {
           console.error('Error executing script:', e);
         }
@@ -336,22 +298,18 @@ plt.show()
     });
   }
   
-  // Load and inject content
   async function loadContent(route) {
     const basePath = getBasePath();
     const contentFile = `${basePath}content/${route}.html`;
     
-    // Debug logging
     console.log('loadContent - route:', route, 'basePath:', basePath, 'contentFile:', contentFile);
     
     try {
-      // Show loading state (optional)
       const mainContent = document.querySelector('.main-content') || document.getElementById('app');
       if (mainContent) {
         mainContent.style.opacity = '0.5';
       }
       
-      // Fetch the content file
       const response = await fetch(contentFile);
       
       if (!response.ok) {
@@ -361,16 +319,13 @@ plt.show()
       const html = await response.text();
       const content = extractContent(html);
       
-      // Inject styles
       injectStyles(content.styles);
       
-      // Replace main content
       if (mainContent) {
         mainContent.innerHTML = content.html;
         mainContent.style.opacity = '1';
       }
       
-      // Execute scripts after a short delay to ensure DOM is ready
       setTimeout(() => {
         executeScripts(content.scripts);
       }, 10);
@@ -378,12 +333,10 @@ plt.show()
     } catch (error) {
       console.error('Error loading content:', error);
       
-      // Try to load default content if this wasn't already the default
       if (route !== DEFAULT_CONTENT) {
         console.log(`Trying to load default content...`);
         loadContent(DEFAULT_CONTENT);
       } else {
-        // Show error message
         const mainContent = document.querySelector('.main-content') || document.getElementById('app');
         if (mainContent) {
           mainContent.innerHTML = `
@@ -399,47 +352,35 @@ plt.show()
     }
   }
   
-  // Handle navigation
   function handleNavigation() {
     const route = getCurrentRoute();
     loadContent(route);
   }
   
-  // Initialize router
   function initRouter() {
-    // Only run router if there's a main-content area
     const mainContent = document.querySelector('.main-content') || document.getElementById('app');
     if (!mainContent) {
       console.warn('Router: No main-content area found, skipping routing');
       return;
     }
     
-    // Get the current route
     const route = getCurrentRoute();
-    
-    // Always try to load content (even for default, in case user wants to override)
-    // If default content file doesn't exist, the existing content will remain
     handleNavigation();
     
-    // Listen for popstate (back/forward buttons)
     window.addEventListener('popstate', handleNavigation);
     
-    // Intercept link clicks for same-origin navigation
-    // Use capture phase to catch links before they bubble
     document.addEventListener('click', function(e) {
       const link = e.target.closest('a[href]');
       if (!link || !link.href) {
         return;
       }
       
-      // Skip if it's an external link or has target="_blank"
       if (link.target === '_blank' || link.href.startsWith('http') && !link.href.startsWith(window.location.origin)) {
         return;
       }
       
       try {
         const url = new URL(link.href, window.location.origin);
-        // Only handle same-origin links
         if (url.origin !== window.location.origin) {
           return;
         }
@@ -449,17 +390,12 @@ plt.show()
         const hash = url.hash;
         const search = url.search;
         
-        // Check if this is a static asset file
         const isStaticAsset = path.match(/\.(html|css|js|png|jpg|jpeg|gif|svg|pdf|json|woff|woff2|ttf|eot|otf)$/i);
         
-        // If path is absolute (starts with /) but not our base path, rewrite it
         if (path.startsWith('/') && !path.startsWith(BASE_PATH) && BASE_PATH !== '/' && BASE_PATH !== './') {
-          // Rewrite absolute paths to be relative to our base
-          // e.g., /sample -> /estimationstats-wasm/leanweb/sample
           path = BASE_PATH + path.substring(1);
         }
         
-        // Handle root/home links
         if (originalPath === '/' || originalPath === '/index.html' || path === BASE_PATH || path === BASE_PATH + 'index.html') {
           e.preventDefault();
           e.stopPropagation();
@@ -469,12 +405,9 @@ plt.show()
           return;
         }
         
-        // Handle content routes (not static assets and not root)
-        // Only intercept if it's not a static asset file
         if (!isStaticAsset && path !== '/' && path !== '/index.html') {
           e.preventDefault();
           e.stopPropagation();
-          // Ensure path includes base if it was an absolute path
           if (originalPath.startsWith('/') && !originalPath.startsWith(BASE_PATH) && BASE_PATH !== '/' && BASE_PATH !== './') {
             path = BASE_PATH + originalPath.substring(1);
           }
@@ -483,72 +416,347 @@ plt.show()
           return;
         }
       } catch (err) {
-        // If URL parsing fails, let the browser handle it normally
         console.warn('Error parsing link URL:', err);
       }
-    }, true); // Use capture phase
+    }, true);
   }
   
-  // Wait for DOM to be ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initRouter);
   } else {
-    // DOM is already ready
     initRouter();
   }
 })();
 </script>
 
-<div data-v-c287a17e="" class="container"><div data-v-c287a17e="" id="app"><header data-v-c287a17e=""><nav class="breadcrumb"><a href="#/" class="breadcrumb-item black-text">Estimation stats</a> 
-      /
-      <a href="#/analyze/two-independent-groups" class="breadcrumb-item black-text router-link-exact-active ">Plot</a></nav><div class="divider heavy"></div></header><div data-v-c287a17e="" class="main-content"><div class="page-title">
-      Two groups
-    </div><div class="row"><div class="col content">
-          This page does estimation statistics' counterpart to Student’s t-test: the two-independent-groups mean difference plot.
-        <a href="#/user-guide/two-independent-groups" class="">
-          Find out more.
-        </a></div></div><br><div class="row"><div class="col s1"><i class="circle-number left">1</i></div><div class="col s11">
-        Enter your data
-      </div></div><div class="row"><div class="col content" style="font-size: 1.25rem;">
+<!-- Main Page Content -->
+<div class="container">
+  <div id="app">
+
+    <header>
+      <nav class="breadcrumb">
+        <a href="./" class="breadcrumb-item black-text">Estimation stats</a>
+        /
+        <a href="./analyze" class="breadcrumb-item black-text">Plot</a>
+      </nav>
+      <div class="divider heavy"></div>
+    </header>
+
+    <div class="main-content">
+
+      <div class="page-title">Two groups</div>
+
+      <div class="row">
+        <div class="col content">
+          This page does estimation statistics' counterpart to Student's t-test: the two-independent-groups mean difference plot.
+          <a href="./user-guide">Find out more.</a>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 1: Enter data -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">1</i></div>
+        <div class="col s11">Enter your data</div>
+      </div>
+
+      <div class="row">
+        <div class="col content" style="font-size: 1.25rem;">
           Each column of your data must correspond to one group of observations, and the first row must be names of the groups; see preloaded data for an example.
-        </div></div><div class="row"><div class="col s12 input-types"><span><input type="radio" id="copy_paste" value="copy_paste"><label for="copy_paste">Copy-paste</label></span><span><input type="radio" id="upload_csv" value="upload_csv"><label for="upload_csv">Upload CSV</label></span></div></div><div class="row hotTable"><div id="hot-1760569771320" style="height: 400px; overflow: hidden; width: 225px;" data-originalstyle="height: 400px; overflow: hidden; width: 225px;" class="handsontable htRowHeaders htColumnHeaders"><div class="ht_master handsontable" style="position: relative;"><div class="wtHolder" style="position: relative; width: 225px; height: 400px;"><div class="wtHider" style="width: 210px; height: 507px;"><div class="wtSpreader" style="position: relative; top: 0px; left: 0px;"><table class="htCore"><colgroup><col class="rowHeader" style="width: 50px;"><col style="width: 80px;"><col style="width: 80px;"></colgroup><thead><tr><th class="" style="height: 25px;"><div class="relative"><span class="colHeader cornerHeader">&nbsp;</span></div></th><th class=""><div class="relative"><span class="colHeader">A</span></div></th><th class=""><div class="relative"><span class="colHeader">B</span></div></th></tr></thead><tbody><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">1</span></div></th><td class="">Control</td><td class="">Test</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">2</span></div></th><td class="">8.885</td><td class="">6.625</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">3</span></div></th><td class="">14.38</td><td class="">2.3</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">4</span></div></th><td class="">8.015</td><td class="">11.975</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">5</span></div></th><td class="">5.835</td><td class="">3.65</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">6</span></div></th><td class="">5.47</td><td class="">8.325</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">7</span></div></th><td class="">12.06</td><td class="">9</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">8</span></div></th><td class="">11.72</td><td class="">6.675</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">9</span></div></th><td class="">10.315</td><td class="">5.35</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">10</span></div></th><td class="">5.065</td><td class="">3.025</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">11</span></div></th><td class="">8.235</td><td class="">0.7</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">12</span></div></th><td class="">15.08</td><td class="">8.375</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">13</span></div></th><td class="">13.485</td><td class="">8.235</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">14</span></div></th><td class="">11.3</td><td class="">6.91</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">15</span></div></th><td class="">9.82</td><td class="">8.59</td></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">16</span></div></th><td class="">9.565</td><td class="">9.265</td></tr></tbody></table><div class="htBorders"><div style="position: absolute; top: 0px; left: 0px;"><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current corner" style="background-color: rgb(75, 137, 255); height: 6px; width: 6px; border: 1px solid rgb(255, 255, 255); display: none;"></div></div><div style="position: absolute; top: 0px; left: 0px;"><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill corner" style="background-color: rgb(255, 0, 0); height: 6px; width: 6px; border: 1px solid rgb(255, 255, 255); display: none;"></div></div></div></div></div></div></div><div class="ht_clone_top handsontable" style="position: absolute; top: 0px; left: 0px; overflow: hidden; width: 210px; height: 30px;"><div class="wtHolder" style="position: relative; width: 210px; height: 45px;"><div class="wtHider" style="width: 210px;"><div class="wtSpreader" style="position: relative; left: 0px;"><table class="htCore"><colgroup><col class="rowHeader" style="width: 50px;"><col style="width: 80px;"><col style="width: 80px;"></colgroup><thead><tr><th class="" style="height: 25px;"><div class="relative"><span class="colHeader cornerHeader">&nbsp;</span></div></th><th class=""><div class="relative"><span class="colHeader">A</span></div></th><th class=""><div class="relative"><span class="colHeader">B</span></div></th></tr></thead><tbody></tbody></table><div class="htBorders"><div style="position: absolute; top: 0px; left: 0px;"><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current corner" style="background-color: rgb(75, 137, 255); height: 6px; width: 6px; border: 1px solid rgb(255, 255, 255); display: none;"></div></div><div style="position: absolute; top: 0px; left: 0px;"><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill corner" style="background-color: rgb(255, 0, 0); height: 6px; width: 6px; border: 1px solid rgb(255, 255, 255); display: none;"></div></div></div></div></div></div></div><div class="ht_clone_left handsontable" style="position: absolute; top: 0px; left: 0px; overflow: hidden; height: 400px; width: 54px;"><div class="wtHolder" style="position: relative; height: 400px; width: 69px;"><div class="wtHider" style="height: 507px;"><div class="wtSpreader" style="position: relative; top: 0px;"><table class="htCore"><colgroup><col class="rowHeader" style="width: 50px;"></colgroup><thead><tr><th class="" style="height: 25px;"><div class="relative"><span class="colHeader cornerHeader">&nbsp;</span></div></th></tr></thead><tbody><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">1</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">2</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">3</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">4</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">5</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">6</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">7</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">8</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">9</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">10</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">11</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">12</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">13</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">14</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">15</span></div></th></tr><tr><th class="" style="height: 29px;"><div class="relative"><span class="rowHeader">16</span></div></th></tr></tbody></table><div class="htBorders"><div style="position: absolute; top: 0px; left: 0px;"><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current corner" style="background-color: rgb(75, 137, 255); height: 6px; width: 6px; border: 1px solid rgb(255, 255, 255); display: none;"></div></div><div style="position: absolute; top: 0px; left: 0px;"><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill corner" style="background-color: rgb(255, 0, 0); height: 6px; width: 6px; border: 1px solid rgb(255, 255, 255); display: none;"></div></div></div></div></div></div></div><div class="ht_clone_top_left_corner handsontable" style="position: absolute; top: 0px; left: 0px; overflow: hidden; height: 30px; width: 54px;"><div class="wtHolder" style="position: relative;"><div class="wtHider"><div class="wtSpreader" style="position: relative;"><table class="htCore"><colgroup><col class="rowHeader" style="width: 50px;"></colgroup><thead><tr><th class="" style="height: 25px;"><div class="relative"><span class="colHeader cornerHeader">&nbsp;</span></div></th></tr></thead><tbody></tbody></table><div class="htBorders"><div style="position: absolute; top: 0px; left: 0px;"><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current" style="background-color: rgb(75, 137, 255); height: 2px; width: 2px; display: none;"></div><div class="wtBorder current corner" style="background-color: rgb(75, 137, 255); height: 6px; width: 6px; border: 1px solid rgb(255, 255, 255); display: none;"></div></div><div style="position: absolute; top: 0px; left: 0px;"><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill" style="background-color: rgb(255, 0, 0); height: 1px; width: 1px; display: none;"></div><div class="wtBorder fill corner" style="background-color: rgb(255, 0, 0); height: 6px; width: 6px; border: 1px solid rgb(255, 255, 255); display: none;"></div></div></div></div></div></div></div></div></div><div class="row"><div class="file-field input-field col s11 file-field input-field blue-text" style="display: none;"><div class="btn btn-large"><span><i class="medium material-icons left pe-7s-file"></i><span>Choose file</span><input type="file" name="file" accept=".csv"></span></div><div class="file-path-wrapper"><input id="file-path" type="text" class="file-path validate"></div></div></div><div class="row"><div class="col s1"><i class="circle-number left">2</i></div><div class="col s11">
-          Choose your effect size
-        </div></div><div class="row"><div class="col content" style="font-size: 1.25rem;">
-          Mouse-over each effect size for a short description, or click <a href="#/about-effect-sizes" class="">here</a>.
-        </div></div><div class="row"><div class="col s12 unpaired-effect-size" style="text-align: left; font-size: 15px;"><span title="The difference between the means of each group."><input type="radio" id="mean_diff" value="mean_diff"><label for="mean_diff">Mean difference</label></span><span title="The difference between the medians of each group."><input type="radio" id="median_diff" value="median_diff"><label for="median_diff">Median difference</label></span><span title="The difference in means, divided by the pooled standard deviation of the two samples. This is useful for comparing effect sizes across experiments."><input type="radio" id="cohens_d" value="cohens_d"><label for="cohens_d">Cohen's d</label></span><span title="Cohen's d corrected for small-sample bias."><input type="radio" id="hedges_g" value="hedges_g"><label for="hedges_g">Hedges' g</label></span><span title="The likelihood that a random selection from the test sample is larger than a random selection from the control group."><input type="radio" id="cliffs_delta" value="cliffs_delta"><label for="cliffs_delta">Cliff's delta</label></span></div></div><br><div class="row"><div class="col s1"><i class="circle-number left">3</i></div><div class="col s11">
-          Select the width of the confidence interval
-        </div></div><div class="row"><div class="col content" style="font-size: 1.25rem;">
-          Choose an number between 50 and 99.9; the default is a 95% CI.
-        </div></div><div class="row"><div class="input-field col s8"><div class="vue-slider-component vue-slider-horizontal" style="width: auto; padding: 11px;"><div aria-hidden="true" class="vue-slider" style="height: 8px;"><div class="vue-slider-false vue-slider-dot" style="width: 22px; height: 22px; top: -7px; transition-duration: 0s; transform: translateX(402px);"><div class="vue-slider-tooltip-top vue-slider-tooltip-wrap"><span class="vue-slider-tooltip">95</span></div></div> <ul class="vue-slider-piecewise"></ul> <div class="vue-slider-process" style="transition-duration: 0s; width: 413.026px; left: 0px;"><div class="vue-merged-tooltip vue-slider-tooltip-t vue-slider-tooltip-wrap"><span class="vue-slider-tooltip">
-            
-          </span></div></div> <input type="range" min="50" max="99.9" class="vue-slider-sr-only"></div></div></div><div class="input-field col s2"><input id="ci" type="number" step="0.1" min="50" max="99.9"></div></div><br><div class="row"><div class="col s1"><i class="circle-number left">4</i></div><div class="col s11">
-            Select the size of the rawdata swarm dots
-          </div></div><div class="row"><div class="col content" style="font-size: 1.25rem;">
-            Change the size (in <a href="https://en.wikipedia.org/wiki/Point_(typography)" tager="_blank">points</a>) of the swarmplot data points.
-          </div></div><div class="row"><div class="input-field col s8"><div class="vue-slider-component vue-slider-horizontal" style="width: auto; padding: 11px;"><div aria-hidden="true" class="vue-slider" style="height: 8px;"><div class="vue-slider-false vue-slider-dot" style="width: 22px; height: 22px; top: -7px; transition-duration: 0s; transform: translateX(195px);"><div class="vue-slider-tooltip-top vue-slider-tooltip-wrap"><span class="vue-slider-tooltip">5</span></div></div> <ul class="vue-slider-piecewise"></ul> <div class="vue-slider-process" style="transition-duration: 0s; width: 205.843px; left: 0px;"><div class="vue-merged-tooltip vue-slider-tooltip-t vue-slider-tooltip-wrap"><span class="vue-slider-tooltip">
-            
-          </span></div></div> <input type="range" min="1" max="9.9" class="vue-slider-sr-only"></div></div></div><div class="input-field col s2"><input id="swarm_dotsize" type="number" step="0.1" min="1" max="9.9"></div></div><br><div class="row"><div class="col s1"><i class="circle-number left">5</i></div><div class="col s11">
-          Select the size of the effect size markers
-        </div></div><div class="row"><div class="col content" style="font-size: 1.25rem;">
-          Change the size (in <a href="https://en.wikipedia.org/wiki/Point_(typography)" tager="_blank">points</a>) of the effect size markers.
-        </div></div><div class="row"><div class="input-field col s8"><div class="vue-slider-component vue-slider-horizontal" style="width: auto; padding: 11px;"><div aria-hidden="true" class="vue-slider" style="height: 8px;"><div class="vue-slider-false vue-slider-dot" style="width: 22px; height: 22px; top: -7px; transition-duration: 0s; transform: translateX(349px);"><div class="vue-slider-tooltip-top vue-slider-tooltip-wrap"><span class="vue-slider-tooltip">8</span></div></div> <ul class="vue-slider-piecewise"></ul> <div class="vue-slider-process" style="transition-duration: 0s; width: 360.225px; left: 0px;"><div class="vue-merged-tooltip vue-slider-tooltip-t vue-slider-tooltip-wrap"><span class="vue-slider-tooltip">
-            
-          </span></div></div> <input type="range" min="1" max="9.9" class="vue-slider-sr-only"></div></div></div><div class="input-field col s2"><input id="es_markersize" type="number" step="0.1" min="1" max="9.9"></div></div><br><div class="row"><div class="col s1"><i class="circle-number left">6</i></div><div class="col s11">
-          Set the y-axis limits for the raw data
-        </div></div><div class="row"><div class="col content" style="font-size: 1.25rem;">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12 input-types">
+          <span>
+            <input type="radio" id="copy_paste" name="input_type" value="copy_paste" checked>
+            <label for="copy_paste">Copy-paste</label>
+          </span>
+          <span>
+            <input type="radio" id="upload_csv" name="input_type" value="upload_csv">
+            <label for="upload_csv">Upload CSV</label>
+          </span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div id="data-table" style="height: 400px; overflow: auto;">
+          <!-- Data table will be rendered here -->
+        </div>
+      </div>
+
+      <div class="row" id="file-upload-row" style="display: none;">
+        <div class="file-field input-field col s11 blue-text">
+          <div class="btn btn-large">
+            <span>
+              <i class="medium material-icons left pe-7s-file"></i>
+              <span>Choose file</span>
+              <input type="file" name="file" accept=".csv">
+            </span>
+          </div>
+          <div class="file-path-wrapper">
+            <input id="file-path" type="text" class="file-path validate">
+          </div>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 2: Effect size -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">2</i></div>
+        <div class="col s11">Choose your effect size</div>
+      </div>
+
+      <div class="row">
+        <div class="col content" style="font-size: 1.25rem;">
+          Mouse-over each effect size for a short description, or click <a href="./about-effect-sizes">here</a>.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12 unpaired-effect-size" style="text-align: left; font-size: 15px;">
+          <span title="The difference between the means of each group.">
+            <input type="radio" id="mean_diff" name="effect_size" value="mean_diff" checked>
+            <label for="mean_diff">Mean difference</label>
+          </span>
+          <span title="The difference between the medians of each group.">
+            <input type="radio" id="median_diff" name="effect_size" value="median_diff">
+            <label for="median_diff">Median difference</label>
+          </span>
+          <span title="The difference in means, divided by the pooled standard deviation of the two samples. This is useful for comparing effect sizes across experiments.">
+            <input type="radio" id="cohens_d" name="effect_size" value="cohens_d">
+            <label for="cohens_d">Cohen's d</label>
+          </span>
+          <span title="Cohen's d corrected for small-sample bias.">
+            <input type="radio" id="hedges_g" name="effect_size" value="hedges_g">
+            <label for="hedges_g">Hedges' g</label>
+          </span>
+          <span title="The likelihood that a random selection from the test sample is larger than a random selection from the control group.">
+            <input type="radio" id="cliffs_delta" name="effect_size" value="cliffs_delta">
+            <label for="cliffs_delta">Cliff's delta</label>
+          </span>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 3: Confidence interval -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">3</i></div>
+        <div class="col s11">Select the width of the confidence interval</div>
+      </div>
+
+      <div class="row">
+        <div class="col content" style="font-size: 1.25rem;">
+          Choose a number between 50 and 99.9; the default is a 95% CI.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-field col s8">
+          <input type="range" id="ci_slider" min="50" max="99.9" step="0.1" value="95">
+        </div>
+        <div class="input-field col s2">
+          <input id="ci" type="number" step="0.1" min="50" max="99.9" value="95">
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 4: Swarm dot size -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">4</i></div>
+        <div class="col s11">Select the size of the rawdata swarm dots</div>
+      </div>
+
+      <div class="row">
+        <div class="col content" style="font-size: 1.25rem;">
+          Change the size (in <a href="https://en.wikipedia.org/wiki/Point_(typography)" target="_blank">points</a>) of the swarmplot data points.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-field col s8">
+          <input type="range" id="swarm_dotsize_slider" min="1" max="9.9" step="0.1" value="5">
+        </div>
+        <div class="input-field col s2">
+          <input id="swarm_dotsize" type="number" step="0.1" min="1" max="9.9" value="5">
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 5: Effect size marker size -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">5</i></div>
+        <div class="col s11">Select the size of the effect size markers</div>
+      </div>
+
+      <div class="row">
+        <div class="col content" style="font-size: 1.25rem;">
+          Change the size (in <a href="https://en.wikipedia.org/wiki/Point_(typography)" target="_blank">points</a>) of the effect size markers.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-field col s8">
+          <input type="range" id="es_markersize_slider" min="1" max="9.9" step="0.1" value="8">
+        </div>
+        <div class="input-field col s2">
+          <input id="es_markersize" type="number" step="0.1" min="1" max="9.9" value="8">
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 6: Y-axis limits -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">6</i></div>
+        <div class="col s11">Set the y-axis limits for the raw data</div>
+      </div>
+
+      <div class="row">
+        <div class="col content" style="font-size: 1.25rem;">
           If left blank, the limits are auto-scaled.
-        </div></div><div class="row"><div class="input-field col s5 l3"><input id="swarmYlimLower" type="number" step="any"><label for="swarmYlimLower">lower limit</label></div><div class="input-field col s5 l3"><input id="swarmYlimUpper" type="number" step="any"><label for="swarmYlimUpper">upper limit</label></div></div><!----><br><div class="row"><div class="col s1"><i class="circle-number left">7</i></div><div class="col s11">
-            Label the y-axis of the raw data
-          </div></div><div class="row"><div class="col content" style="font-size: 1.25rem;">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-field col s5 l3">
+          <input id="swarmYlimLower" type="number" step="any">
+          <label for="swarmYlimLower">lower limit</label>
+        </div>
+        <div class="input-field col s5 l3">
+          <input id="swarmYlimUpper" type="number" step="any">
+          <label for="swarmYlimUpper">upper limit</label>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 7: Y-axis label -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">7</i></div>
+        <div class="col s11">Label the y-axis of the raw data</div>
+      </div>
+
+      <div class="row">
+        <div class="col content" style="font-size: 1.25rem;">
           If left blank, this defaults to the string "value".
-        </div></div><div class="row"><div class="input-field col s10"><input id="yaxis" type="text"><label for="yaxis">y-axis label</label></div></div><!----><!----><br><div class="row"><div class="col s1"><i class="circle-number left">8</i></div><div class="col s11">
-          Analyze and display your data
-        </div></div><div class="row"><div class="file-field input-field col s12"><div class="btn btn-large"><span><i class="medium material-icons left pe-7s-display1"></i><span class="left">Analyze</span></span></div></div></div><div class="row"><div class="preloader-wrapper active" style="display: none;"><div class="spinner-layer spinner-blue"><div class="circle-clipper left"><div class="circle"></div></div><div class="gap-patch"><div class="circle"></div></div><div class="circle-clipper right"><div class="circle"></div></div></div><div class="spinner-layer spinner-red"><div class="circle-clipper left"><div class="circle"></div></div><div class="gap-patch"><div class="circle"></div></div><div class="circle-clipper right"><div class="circle"></div></div></div><div class="spinner-layer spinner-yellow"><div class="circle-clipper left"><div class="circle"></div></div><div class="gap-patch"><div class="circle"></div></div><div class="circle-clipper right"><div class="circle"></div></div></div><div class="spinner-layer spinner-green"><div class="circle-clipper left"><div class="circle"></div></div><div class="gap-patch"><div class="circle"></div></div><div class="circle-clipper right"><div class="circle"></div></div></div></div></div><div class="row"><div class="file-field input-field col s12"><!----></div></div><div class="row"><div class="col s1"><i class="circle-number left">9</i></div><div class="col s11">
-          Download the results
-        </div></div><div class="row"><div class="col content" style="font-size: 1.25rem;">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="input-field col s10">
+          <input id="yaxis" type="text">
+          <label for="yaxis">y-axis label</label>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 8: Analyze -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">8</i></div>
+        <div class="col s11">Analyze and display your data</div>
+      </div>
+
+      <div class="row">
+        <div class="file-field input-field col s12">
+          <div class="btn btn-large" id="analyze-btn">
+            <span>
+              <i class="medium material-icons left pe-7s-display1"></i>
+              <span class="left">Analyze</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="preloader-wrapper active" id="analysis-spinner" style="display: none;">
+          <div class="spinner-layer spinner-blue">
+            <div class="circle-clipper left"><div class="circle"></div></div>
+            <div class="gap-patch"><div class="circle"></div></div>
+            <div class="circle-clipper right"><div class="circle"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <br>
+
+      <!-- Step 9: Download -->
+      <div class="row">
+        <div class="col s1"><i class="circle-number left">9</i></div>
+        <div class="col s11">Download the results</div>
+      </div>
+
+      <div class="row">
+        <div class="col content" style="font-size: 1.25rem;">
           Plots are available in SVG or PNG formats.
           <br>The table of statistics can be downloaded as a CSV text file.
-        </div></div><div class="row"><div class="col s12 file-types"><span><input type="radio" id="png" value="png"><label for="png">PNG</label></span><span><input type="radio" id="svg" value="svg"><label for="svg">SVG</label></span><span><input type="radio" id="csv" value="csv"><label for="csv">CSV</label></span></div></div><div class="row"><div class="file-field input-field col s12"><div class="btn btn-large disabled"><span><i class="medium material-icons left pe-7s-cloud-download"></i><span class="left">Download</span></span></div></div></div><div class="row"><!----></div></div><footer data-v-c287a17e=""><div class="row"></div><div class="row valign-wrapper"><div class="col s2 left-align"><a href="#/" class="grey-text text-darken-1"><img src="./img/Box.baa1019b.svg" class="logo" style="width: 200px; height: 200px;"></a></div><div class="col s3 center-align"><a href="https://acclab.github.io/DABEST-python/" class="grey-text text-darken-1"><img src="./img/DABEST.43a09767.svg" class="logo" style="width: 160px; height: auto;"></a></div><div class="col s3 center-align"><a href="https://acclab.github.io/dabestr/" class="grey-text text-darken-1"><img src="./img/dabestr.dfe30d65.svg" class="logo" style="width: 160px; height: auto;"></a></div><div class="col s3 center-align"><a href="#/about" class="grey-text text-darken-1"><img src="./img/WebApp.db612c94.svg" class="logo" style="width: 160px; height: auto;"></a></div></div></footer></div></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col s12 file-types">
+          <span>
+            <input type="radio" id="png" name="download_format" value="png" checked>
+            <label for="png">PNG</label>
+          </span>
+          <span>
+            <input type="radio" id="svg" name="download_format" value="svg">
+            <label for="svg">SVG</label>
+          </span>
+          <span>
+            <input type="radio" id="csv" name="download_format" value="csv">
+            <label for="csv">CSV</label>
+          </span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="file-field input-field col s12">
+          <div class="btn btn-large disabled" id="download-btn">
+            <span>
+              <i class="medium material-icons left pe-7s-cloud-download"></i>
+              <span class="left">Download</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <footer>
+      <div class="row"></div>
+      <div class="row valign-wrapper">
+        <div class="col s2 left-align">
+          <a href="./" class="grey-text text-darken-1">
+            <img src="./img/Box.baa1019b.svg" class="logo" style="width: 200px; height: 200px;">
+          </a>
+        </div>
+        <div class="col s3 center-align">
+          <a href="https://acclab.github.io/DABEST-python/" class="grey-text text-darken-1">
+            <img src="./img/DABEST.43a09767.svg" class="logo" style="width: 160px; height: auto;">
+          </a>
+        </div>
+        <div class="col s3 center-align">
+          <a href="https://acclab.github.io/dabestr/" class="grey-text text-darken-1">
+            <img src="./img/dabestr.dfe30d65.svg" class="logo" style="width: 160px; height: auto;">
+          </a>
+        </div>
+        <div class="col s3 center-align">
+          <a href="./about" class="grey-text text-darken-1">
+            <img src="./img/WebApp.db612c94.svg" class="logo" style="width: 160px; height: auto;">
+          </a>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+</div>
 
 </body>
 </html>
