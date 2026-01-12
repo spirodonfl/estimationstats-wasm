@@ -22,14 +22,25 @@
         }
         
         // Redirect to index.html (the pathname will be restored by index.html's router)
-        window.location.replace('/index.html' + currentSearch + currentHash);
+        // Respect GitHub Pages base path (e.g., /repo/leanweb/)
+        var basePath = currentPath;
+        if (basePath.endsWith('/')) {
+            basePath = basePath.slice(0, -1);
+        }
+        var lastSlash = basePath.lastIndexOf('/');
+        if (lastSlash >= 0) {
+            basePath = basePath.slice(0, lastSlash + 1);
+        } else {
+            basePath = '/';
+        }
+        window.location.replace(basePath + 'index.html' + currentSearch + currentHash);
     </script>
 </head>
 <body>
     <p>Redirecting...</p>
     <noscript>
         <p>JavaScript is required for this site. Please enable JavaScript and refresh the page.</p>
-        <p><a href="/index.html">Go to home page</a></p>
+        <p><a href="./index.html">Go to home page</a></p>
     </noscript>
 </body>
 </html>
