@@ -17,15 +17,24 @@
   <div class="row">
     <div class="col s12">
       <label for="config-data">1. data (long format DataFrame)</label>
-      <textarea id="config-data" class="config-textarea" rows="6" placeholder="Paste or describe your long-format dataframe here"></textarea>
-      <div class="hint">User must provide a long-format dataframe.</div>
+      <textarea id="config-data" class="config-textarea" rows="8" placeholder="Paste your long-format dataframe as CSV">group,value,id,sex
+Control,8.885,1,F
+Test,6.625,1,F
+Control,14.38,2,M
+Test,2.3,2,M
+Control,8.015,3,F
+Test,11.975,3,F
+Control,5.835,4,M
+Test,3.65,4,M
+</textarea>
+      <div class="hint">User must provide a long-format dataframe (CSV). Columns should include the group and value columns.</div>
     </div>
   </div>
 
   <div class="row">
     <div class="col s12">
       <label for="config-idx">2. idx (tuple/list, can be nested)</label>
-      <input id="config-idx" type="text" placeholder="Example: ((Control 1, Test 1, Test 2), (Control 2, Test 3))">
+      <input id="config-idx" type="text" value="('Control','Test')">
       <div class="hint">Groups within each tuple are compared; the first is the control.</div>
     </div>
   </div>
@@ -45,7 +54,7 @@
   <div class="row">
     <div class="col s12">
       <label for="config-id-col">4. id_col (required if paired != None)</label>
-      <input id="config-id-col" type="text" placeholder="Column name for pairing identity">
+      <input id="config-id-col" type="text" value="id">
     </div>
   </div>
 
@@ -85,7 +94,7 @@
   <div class="row">
     <div class="col s12">
       <label for="config-x">8. x</label>
-      <input id="config-x" type="text" placeholder="Column name (or two names if delta2)">
+      <input id="config-x" type="text" value="group">
       <div class="hint">If delta2, provide two column names (x1, x2).</div>
     </div>
   </div>
@@ -93,7 +102,7 @@
   <div class="row">
     <div class="col s12">
       <label for="config-y">9. y</label>
-      <input id="config-y" type="text" placeholder="Column name for y values">
+      <input id="config-y" type="text" value="value">
     </div>
   </div>
 
@@ -122,11 +131,11 @@
   <div class="row">
     <div class="col s6">
       <label for="config-experiment-label">14. experiment_label (delta2 only)</label>
-      <input id="config-experiment-label" type="text" placeholder="Example: Drug, Placebo">
+      <input id="config-experiment-label" type="text" placeholder="Example: ('Drug','Placebo')">
     </div>
     <div class="col s6">
       <label for="config-x1-level">15. x1_level (delta2 only)</label>
-      <input id="config-x1-level" type="text" placeholder="Example: M, W">
+      <input id="config-x1-level" type="text" placeholder="Example: ('M','W')">
     </div>
   </div>
 
@@ -175,7 +184,38 @@
     </div>
     <div class="col s6">
       <label for="config-color-col">2. color_col</label>
-      <input id="config-color-col" type="text" placeholder="Column name for color grouping">
+      <input id="config-color-col" type="text" value="sex">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <h3>Run analysis</h3>
+      <div id="pyodide-section" class="pyodide-controls">
+        <button id="start-pyodide-btn" class="btn btn-large" onclick="loadPyodideRuntime()" style="background-color: #4CAF50; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;">
+          Load DABEST Runtime
+        </button>
+        <div id="pyodide-loader" style="display: none; width: 100%; max-width: 600px; margin: 20px 0; padding: 20px; text-align: center; font-family: Arial, sans-serif; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
+          <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">Loading Pyodide Runtime</h3>
+          <div id="loader-status" style="margin-bottom: 10px; color: #666; font-size: 14px;">Initializing...</div>
+          <div style="width: 100%; height: 24px; background: #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+            <div id="loader-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">
+              <span id="loader-percent">0%</span>
+            </div>
+          </div>
+          <div id="loader-details" style="margin-top: 8px; color: #999; font-size: 12px; min-height: 18px;"></div>
+        </div>
+      </div>
+      <button id="config-analyze-btn" class="btn btn-large" style="margin-top: 10px;">Analyze</button>
+      <div id="config-status" class="hint"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <div id="plot-target" style="margin: 20px auto; max-width: 900px;"></div>
+      <div id="stats-table" class="stats-table-wrap"></div>
+      <pre id="out" style="text-align: left; max-width: 900px; margin: 20px auto; background: #f5f5f5; padding: 15px; border-radius: 8px; overflow-x: auto;"></pre>
     </div>
   </div>
 </div>
@@ -199,4 +239,308 @@
     font-size: 0.9rem;
     margin-top: 6px;
   }
+  .stats-table-wrap {
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .stats-table th,
+  .stats-table td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+  }
+  .stats-table th {
+    background: #f3f3f3;
+  }
+  .stats-cell-textarea {
+    max-width: 300px;
+    width: 300px;
+    min-height: 80px;
+    resize: vertical;
+  }
 </style>
+
+<script>
+  (function() {
+    const statusEl = document.getElementById('config-status');
+    const analyzeBtn = document.getElementById('config-analyze-btn');
+
+    function setRadio(name, value) {
+      const radios = document.querySelectorAll(`input[name="${name}"]`);
+      radios.forEach(radio => {
+        radio.checked = radio.value === value;
+      });
+    }
+
+    function handleMutualExclusive(sourceName, targetName) {
+      const sourceRadios = document.querySelectorAll(`input[name="${sourceName}"]`);
+      sourceRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.checked && radio.value === 'true') {
+            setRadio(targetName, 'false');
+          }
+        });
+      });
+    }
+
+    handleMutualExclusive('mini_meta', 'delta2');
+    handleMutualExclusive('delta2', 'mini_meta');
+
+    function getRadioValue(name) {
+      const selected = document.querySelector(`input[name="${name}"]:checked`);
+      return selected ? selected.value : '';
+    }
+
+    function parseNumber(value, fallback) {
+      const num = Number(value);
+      return Number.isFinite(num) ? num : fallback;
+    }
+
+    async function ensurePyodideReady() {
+      if (typeof pyodideLoaded !== 'undefined' && pyodideLoaded && pyodideInstance) {
+        return true;
+      }
+      if (typeof loadPyodideRuntime === 'function') {
+        try {
+          await loadPyodideRuntime();
+        } catch (err) {
+          statusEl.textContent = 'Failed to load Pyodide runtime.';
+          return false;
+        }
+        const start = Date.now();
+        while (Date.now() - start < 120000) {
+          if (typeof pyodideLoaded !== 'undefined' && pyodideLoaded && pyodideInstance) {
+            return true;
+          }
+          await new Promise(r => setTimeout(r, 200));
+        }
+      }
+      statusEl.textContent = 'Pyodide runtime is not loaded.';
+      return false;
+    }
+
+    function wrapLongStatsCells(container) {
+      const table = container.querySelector('table');
+      if (!table) return;
+
+      const longColumns = new Set([
+        'bootstraps',
+        'permutations',
+        'permutations_var',
+        'bec_bootstraps'
+      ]);
+
+      const headers = Array.from(table.querySelectorAll('thead th')).map(th =>
+        th.textContent.trim().toLowerCase()
+      );
+
+      const indices = headers
+        .map((name, idx) => longColumns.has(name) ? idx : -1)
+        .filter(idx => idx >= 0);
+
+      if (indices.length === 0) return;
+
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        indices.forEach(idx => {
+          const cell = row.children[idx];
+          if (!cell) return;
+          const text = cell.textContent;
+          const textarea = document.createElement('textarea');
+          textarea.className = 'stats-cell-textarea';
+          textarea.readOnly = true;
+          textarea.value = text;
+          cell.textContent = '';
+          cell.appendChild(textarea);
+        });
+      });
+    }
+
+    analyzeBtn.addEventListener('click', async () => {
+      statusEl.textContent = '';
+      const ok = await ensurePyodideReady();
+      if (!ok) return;
+
+      const dataText = document.getElementById('config-data').value.trim();
+      const idxText = document.getElementById('config-idx').value.trim();
+      const xText = document.getElementById('config-x').value.trim();
+      const yText = document.getElementById('config-y').value.trim();
+
+      if (!dataText) {
+        statusEl.textContent = 'Please provide CSV data.';
+        return;
+      }
+      if (!idxText) {
+        statusEl.textContent = 'Please provide idx.';
+        return;
+      }
+      if (!xText || !yText) {
+        statusEl.textContent = 'Please provide x and y column names.';
+        return;
+      }
+
+      const payload = {
+        dataText,
+        idxText,
+        xText,
+        yText,
+        paired: getRadioValue('paired'),
+        idCol: document.getElementById('config-id-col').value.trim(),
+        proportional: getRadioValue('proportional') === 'true',
+        miniMeta: getRadioValue('mini_meta') === 'true',
+        delta2: getRadioValue('delta2') === 'true',
+        resamples: parseNumber(document.getElementById('config-resamples').value, 5000),
+        ci: parseNumber(document.getElementById('config-ci').value, 95),
+        randomSeed: parseNumber(document.getElementById('config-seed').value, 12345),
+        experiment: document.getElementById('config-experiment').value.trim(),
+        experimentLabel: document.getElementById('config-experiment-label').value.trim(),
+        x1Level: document.getElementById('config-x1-level').value.trim(),
+        psAdjust: getRadioValue('ps_adjust') === 'true',
+        effectSize: getRadioValue('effect-size'),
+        horizontal: getRadioValue('horizontal') === 'true',
+        colorCol: document.getElementById('config-color-col').value.trim()
+      };
+
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = 'Analyzing...';
+
+      try {
+        const plotTarget = document.getElementById('plot-target');
+        const outEl = document.getElementById('out');
+        const statsEl = document.getElementById('stats-table');
+        plotTarget.innerHTML = '';
+        outEl.textContent = '';
+        statsEl.innerHTML = '';
+        document.pyodideMplTarget = plotTarget;
+
+        pyodideInstance.globals.set('config_payload', JSON.stringify(payload));
+
+        const resultJson = await pyodideInstance.runPythonAsync(`
+import ast
+import base64
+import json
+from io import StringIO
+import pandas as pd
+import dabest
+import matplotlib.pyplot as plt
+
+cfg = json.loads(config_payload)
+
+def parse_value(text):
+    text = (text or '').strip()
+    if not text:
+        return None
+    try:
+        return ast.literal_eval(text)
+    except Exception:
+        parts = [p.strip() for p in text.split(',') if p.strip()]
+        if len(parts) == 1:
+            return parts[0]
+        return parts
+
+csv_text = cfg.get('dataText', '')
+
+df = pd.read_csv(StringIO(csv_text))
+if df.empty:
+    raise ValueError('Dataframe is empty.')
+
+idx_val = parse_value(cfg.get('idxText'))
+if idx_val is None:
+    raise ValueError('idx is required.')
+
+paired_val = cfg.get('paired')
+if paired_val == 'none':
+    paired_val = None
+
+id_col = cfg.get('idCol') or None
+
+x_val = cfg.get('xText')
+y_val = cfg.get('yText')
+
+if cfg.get('delta2'):
+    x_val = parse_value(x_val)
+    if isinstance(x_val, str):
+        x_val = [x_val]
+    if not isinstance(x_val, (list, tuple)) or len(x_val) != 2:
+        raise ValueError('x must have two entries when delta2 is true.')
+
+experiment = cfg.get('experiment') or None
+experiment_label = parse_value(cfg.get('experimentLabel'))
+x1_level = parse_value(cfg.get('x1Level'))
+
+load_kwargs = dict(
+    data=df,
+    idx=idx_val,
+    x=x_val,
+    y=y_val,
+    paired=paired_val,
+    id_col=id_col,
+    proportional=bool(cfg.get('proportional')),
+    mini_meta=bool(cfg.get('miniMeta')),
+    delta2=bool(cfg.get('delta2')),
+    resamples=int(cfg.get('resamples')),
+    ci=float(cfg.get('ci')),
+    random_seed=int(cfg.get('randomSeed')),
+    ps_adjust=bool(cfg.get('psAdjust')),
+)
+
+if cfg.get('delta2'):
+    if experiment:
+        load_kwargs['experiment'] = experiment
+    if experiment_label is not None:
+        load_kwargs['experiment_label'] = experiment_label
+    if x1_level is not None:
+        load_kwargs['x1_level'] = x1_level
+
+
+d = dabest.load(**load_kwargs)
+
+est = getattr(d, cfg.get('effectSize'))
+
+plot_kwargs = {}
+if cfg.get('horizontal'):
+    plot_kwargs['horizontal'] = True
+if cfg.get('colorCol'):
+    plot_kwargs['color_col'] = cfg.get('colorCol')
+
+try:
+    fig = est.plot(**plot_kwargs)
+except TypeError:
+    fig = est.plot()
+
+plt.tight_layout()
+plt.show()
+
+summary = str(est)
+
+stats_html = ''
+try:
+    res = getattr(est, 'results', None)
+    if res is None:
+        res = getattr(est, '_results', None)
+    if res is not None:
+        stats_html = res.to_html(index=False, classes='stats-table')
+except Exception as e:
+    stats_html = '<p>Could not build stats table: {}</p>'.format(e)
+
+json.dumps({'summary': summary, 'stats_html': stats_html})
+        `);
+
+        const result = JSON.parse(resultJson);
+        outEl.textContent = result.summary || '';
+        statsEl.innerHTML = result.stats_html || '';
+        wrapLongStatsCells(statsEl);
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = err.message || 'Error running analysis.';
+      } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = 'Analyze';
+      }
+    });
+  })();
+</script>
