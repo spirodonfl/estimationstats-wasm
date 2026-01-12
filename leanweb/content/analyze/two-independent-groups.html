@@ -1,0 +1,645 @@
+<!-- Two independent groups analysis page -->
+<div data-content>
+  <div class="page-title">Two groups</div>
+
+  <div class="row">
+    <div class="col content">
+      <p>This page recreates the two-independent-groups workflow using Pyodide + DABEST.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <h3>1) Enter your data</h3>
+      <p>Each column is a group. The first row contains the group names.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <div class="table-toolbar">
+        <button id="add-row-btn" class="btn small">Add row</button>
+        <button id="add-col-btn" class="btn small">Add column</button>
+        <label class="file-upload">
+          <input type="file" id="csv-input" accept=".csv,.tsv,text/csv,text/tab-separated-values">
+          Upload CSV
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table id="two-group-table" class="grid-table">
+          <thead>
+            <tr>
+              <th class="row-head"></th>
+              <th><input class="grid-input header-input" value="Control"></th>
+              <th><input class="grid-input header-input" value="Test"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="row-head">1</th>
+              <td><input class="grid-input" value="8.885"></td>
+              <td><input class="grid-input" value="6.625"></td>
+            </tr>
+            <tr>
+              <th class="row-head">2</th>
+              <td><input class="grid-input" value="14.38"></td>
+              <td><input class="grid-input" value="2.3"></td>
+            </tr>
+            <tr>
+              <th class="row-head">3</th>
+              <td><input class="grid-input" value="8.015"></td>
+              <td><input class="grid-input" value="11.975"></td>
+            </tr>
+            <tr>
+              <th class="row-head">4</th>
+              <td><input class="grid-input" value="5.835"></td>
+              <td><input class="grid-input" value="3.65"></td>
+            </tr>
+            <tr>
+              <th class="row-head">5</th>
+              <td><input class="grid-input" value="5.47"></td>
+              <td><input class="grid-input" value="8.325"></td>
+            </tr>
+            <tr>
+              <th class="row-head">6</th>
+              <td><input class="grid-input" value="12.06"></td>
+              <td><input class="grid-input" value="9"></td>
+            </tr>
+            <tr>
+              <th class="row-head">7</th>
+              <td><input class="grid-input" value="11.72"></td>
+              <td><input class="grid-input" value="6.675"></td>
+            </tr>
+            <tr>
+              <th class="row-head">8</th>
+              <td><input class="grid-input" value="10.315"></td>
+              <td><input class="grid-input" value="5.35"></td>
+            </tr>
+            <tr>
+              <th class="row-head">9</th>
+              <td><input class="grid-input" value="5.065"></td>
+              <td><input class="grid-input" value="3.025"></td>
+            </tr>
+            <tr>
+              <th class="row-head">10</th>
+              <td><input class="grid-input" value="8.235"></td>
+              <td><input class="grid-input" value="0.7"></td>
+            </tr>
+            <tr>
+              <th class="row-head">11</th>
+              <td><input class="grid-input" value="15.08"></td>
+              <td><input class="grid-input" value="8.375"></td>
+            </tr>
+            <tr>
+              <th class="row-head">12</th>
+              <td><input class="grid-input" value="13.485"></td>
+              <td><input class="grid-input" value="8.235"></td>
+            </tr>
+            <tr>
+              <th class="row-head">13</th>
+              <td><input class="grid-input" value="11.3"></td>
+              <td><input class="grid-input" value="6.91"></td>
+            </tr>
+            <tr>
+              <th class="row-head">14</th>
+              <td><input class="grid-input" value="9.82"></td>
+              <td><input class="grid-input" value="8.59"></td>
+            </tr>
+            <tr>
+              <th class="row-head">15</th>
+              <td><input class="grid-input" value="9.565"></td>
+              <td><input class="grid-input" value="9.265"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">Tip: paste CSV or TSV directly into the grid.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s1"><i class="circle-number left">2</i></div>
+    <div class="col s11">Choose your effect size</div>
+  </div>
+  <div class="row">
+    <div class="col content" style="font-size: 1.25rem;">
+      Mouse-over each effect size for a short description.
+    </div>
+  </div>
+  <div class="row">
+    <div class="col s12 unpaired-effect-size" style="text-align: left; font-size: 15px;">
+      <span title="The difference between the means of each group."><input type="radio" id="mean_diff" name="effect-size" value="mean_diff" checked><label for="mean_diff">Mean difference</label></span>
+      <span title="The difference between the medians of each group."><input type="radio" id="median_diff" name="effect-size" value="median_diff"><label for="median_diff">Median difference</label></span>
+      <span title="The difference in means, divided by the pooled standard deviation of the two samples."><input type="radio" id="cohens_d" name="effect-size" value="cohens_d"><label for="cohens_d">Cohen's d</label></span>
+      <span title="Cohen's d corrected for small-sample bias."><input type="radio" id="hedges_g" name="effect-size" value="hedges_g"><label for="hedges_g">Hedges' g</label></span>
+      <span title="The likelihood that a random selection from the test sample is larger than a random selection from the control group."><input type="radio" id="cliffs_delta" name="effect-size" value="cliffs_delta"><label for="cliffs_delta">Cliff's delta</label></span>
+    </div>
+  </div>
+
+  <br>
+
+  <div class="row">
+    <div class="col s1"><i class="circle-number left">3</i></div>
+    <div class="col s11">Select the width of the confidence interval</div>
+  </div>
+  <div class="row">
+    <div class="col content" style="font-size: 1.25rem;">
+      Choose a number between 50 and 99.9; the default is a 95% CI.
+    </div>
+  </div>
+  <div class="row">
+    <div class="input-field col s2">
+      <input id="ci" type="number" step="0.1" min="50" max="99.9" value="95">
+      <label for="ci">CI</label>
+    </div>
+  </div>
+
+  <br>
+
+  <div class="row">
+    <div class="col s1"><i class="circle-number left">4</i></div>
+    <div class="col s11">Select the size of the rawdata swarm dots</div>
+  </div>
+  <div class="row">
+    <div class="col content" style="font-size: 1.25rem;">
+      Change the size (in points) of the swarmplot data points.
+    </div>
+  </div>
+  <div class="row">
+    <div class="input-field col s2">
+      <input id="swarm_dotsize" type="number" step="0.1" min="1" max="9.9" value="5">
+      <label for="swarm_dotsize">Swarm dot size</label>
+    </div>
+  </div>
+
+  <br>
+
+  <div class="row">
+    <div class="col s1"><i class="circle-number left">5</i></div>
+    <div class="col s11">Select the size of the effect size markers</div>
+  </div>
+  <div class="row">
+    <div class="col content" style="font-size: 1.25rem;">
+      Change the size (in points) of the effect size markers.
+    </div>
+  </div>
+  <div class="row">
+    <div class="input-field col s2">
+      <input id="es_markersize" type="number" step="0.1" min="1" max="9.9" value="8">
+      <label for="es_markersize">Effect size marker</label>
+    </div>
+  </div>
+
+  <br>
+
+  <div class="row">
+    <div class="col s1"><i class="circle-number left">6</i></div>
+    <div class="col s11">Set the y-axis limits for the raw data</div>
+  </div>
+  <div class="row">
+    <div class="col content" style="font-size: 1.25rem;">
+      If left blank, the limits are auto-scaled.
+    </div>
+  </div>
+  <div class="row">
+    <div class="input-field col s3">
+      <input id="swarmYlimLower" type="number" step="any">
+      <label for="swarmYlimLower">Lower limit</label>
+    </div>
+    <div class="input-field col s3">
+      <input id="swarmYlimUpper" type="number" step="any">
+      <label for="swarmYlimUpper">Upper limit</label>
+    </div>
+  </div>
+
+  <br>
+
+  <div class="row">
+    <div class="col s1"><i class="circle-number left">7</i></div>
+    <div class="col s11">Label the y-axis of the raw data</div>
+  </div>
+  <div class="row">
+    <div class="input-field col s6">
+      <input id="yaxis" type="text" value="value">
+      <label for="yaxis">y-axis label</label>
+    </div>
+  </div>
+
+  <br>
+
+  <div class="row">
+    <div class="col s1"><i class="circle-number left">8</i></div>
+    <div class="col s11">Analyze and display your data</div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <div id="pyodide-section" class="pyodide-controls">
+        <button id="start-pyodide-btn" class="btn btn-large" onclick="loadPyodideRuntime()" style="background-color: #4CAF50; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;">
+          Load DABEST Runtime
+        </button>
+        <div id="pyodide-loader" style="display: none; width: 100%; max-width: 600px; margin: 20px 0; padding: 20px; text-align: center; font-family: Arial, sans-serif; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
+          <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px;">Loading Pyodide Runtime</h3>
+          <div id="loader-status" style="margin-bottom: 10px; color: #666; font-size: 14px;">Initializing...</div>
+          <div style="width: 100%; height: 24px; background: #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+            <div id="loader-progress" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">
+              <span id="loader-percent">0%</span>
+            </div>
+          </div>
+          <div id="loader-details" style="margin-top: 8px; color: #999; font-size: 12px; min-height: 18px;"></div>
+        </div>
+      </div>
+      <button id="analyze-btn" class="btn btn-large" style="margin-top: 10px;">Analyze</button>
+      <div id="analysis-status" class="hint"></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <div id="plot-target" style="margin: 20px auto; max-width: 900px;"></div>
+      <div id="stats-table" class="stats-table-wrap"></div>
+      <pre id="out" style="text-align: left; max-width: 900px; margin: 20px auto; background: #f5f5f5; padding: 15px; border-radius: 8px; overflow-x: auto;"></pre>
+    </div>
+  </div>
+</div>
+
+<style>
+  .table-toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin: 10px 0;
+  }
+  .table-toolbar .btn.small {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+  .file-upload {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #fafafa;
+  }
+  .file-upload input {
+    display: none;
+  }
+  .table-wrap {
+    overflow: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    max-width: 100%;
+  }
+  .grid-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 420px;
+  }
+  .grid-table th,
+  .grid-table td {
+    border: 1px solid #e0e0e0;
+    padding: 0;
+    text-align: center;
+  }
+  .grid-table .row-head {
+    width: 36px;
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+  .grid-input {
+    width: 100%;
+    border: none;
+    padding: 8px;
+    text-align: center;
+  }
+  .grid-input:focus {
+    outline: 2px solid #4b89ff;
+    outline-offset: -2px;
+  }
+  .header-input {
+    font-weight: 600;
+  }
+  .hint {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+  .stats-table-wrap {
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .stats-table th,
+  .stats-table td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+  }
+  .stats-table th {
+    background: #f3f3f3;
+  }
+</style>
+
+<script>
+  (function() {
+    const table = document.getElementById('two-group-table');
+    const addRowBtn = document.getElementById('add-row-btn');
+    const addColBtn = document.getElementById('add-col-btn');
+    const csvInput = document.getElementById('csv-input');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const statusEl = document.getElementById('analysis-status');
+
+    function updateRowHeaders() {
+      const rows = table.tBodies[0].rows;
+      for (let i = 0; i < rows.length; i++) {
+        rows[i].querySelector('th').textContent = String(i + 1);
+      }
+    }
+
+    function addRow() {
+      const tbody = table.tBodies[0];
+      const colCount = table.tHead.rows[0].cells.length - 1;
+      const row = document.createElement('tr');
+      const head = document.createElement('th');
+      head.className = 'row-head';
+      row.appendChild(head);
+      for (let i = 0; i < colCount; i++) {
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.className = 'grid-input';
+        td.appendChild(input);
+        row.appendChild(td);
+      }
+      tbody.appendChild(row);
+      updateRowHeaders();
+    }
+
+    function addColumn() {
+      const headRow = table.tHead.rows[0];
+      const th = document.createElement('th');
+      const input = document.createElement('input');
+      input.className = 'grid-input header-input';
+      input.value = `Group ${headRow.cells.length}`;
+      th.appendChild(input);
+      headRow.appendChild(th);
+
+      Array.from(table.tBodies[0].rows).forEach(row => {
+        const td = document.createElement('td');
+        const inputCell = document.createElement('input');
+        inputCell.className = 'grid-input';
+        td.appendChild(inputCell);
+        row.appendChild(td);
+      });
+    }
+
+    addRowBtn.addEventListener('click', addRow);
+    addColBtn.addEventListener('click', addColumn);
+
+    function getMatrix() {
+      const headers = Array.from(table.tHead.rows[0].cells)
+        .slice(1)
+        .map(th => th.querySelector('input').value.trim() || 'Group');
+
+      const rows = Array.from(table.tBodies[0].rows).map(row => {
+        const cells = Array.from(row.cells).slice(1).map(td => td.querySelector('input').value.trim());
+        return cells;
+      });
+
+      return [headers, ...rows];
+    }
+
+    function trimMatrix(matrix) {
+      let rows = matrix.slice();
+      while (rows.length > 1 && rows[rows.length - 1].every(v => v === '')) {
+        rows.pop();
+      }
+      if (rows.length === 0) {
+        return rows;
+      }
+      let colCount = rows[0].length;
+      while (colCount > 1) {
+        const allEmpty = rows.every(row => row[colCount - 1] === '');
+        if (!allEmpty) break;
+        colCount -= 1;
+      }
+      rows = rows.map(row => row.slice(0, colCount));
+      return rows;
+    }
+
+    function csvEscape(value) {
+      const needsQuote = /[\",\n]/.test(value);
+      if (!needsQuote) return value;
+      return '"' + value.replace(/"/g, '""') + '"';
+    }
+
+    function matrixToCsv(matrix) {
+      return matrix.map(row => row.map(csvEscape).join(',')).join('\n');
+    }
+
+    function parseDelimited(text) {
+      const lines = text.trim().split(/\r?\n/).filter(Boolean);
+      if (lines.length === 0) return [];
+      const delimiter = lines[0].includes('\t') ? '\t' : ',';
+      return lines.map(line => line.split(delimiter));
+    }
+
+    function fillTable(data) {
+      if (!data.length) return;
+      const headers = data[0];
+      const body = data.slice(1);
+
+      const headRow = table.tHead.rows[0];
+      while (headRow.cells.length - 1 < headers.length) {
+        addColumn();
+      }
+      headers.forEach((val, idx) => {
+        const input = headRow.cells[idx + 1].querySelector('input');
+        input.value = val || `Group ${idx + 1}`;
+      });
+
+      while (table.tBodies[0].rows.length < body.length) {
+        addRow();
+      }
+
+      body.forEach((row, rIdx) => {
+        row.forEach((val, cIdx) => {
+          const cell = table.tBodies[0].rows[rIdx].cells[cIdx + 1].querySelector('input');
+          if (cell) cell.value = val;
+        });
+      });
+    }
+
+    table.addEventListener('paste', (event) => {
+      const target = event.target;
+      if (!target.classList.contains('grid-input')) return;
+      const text = event.clipboardData.getData('text');
+      const data = parseDelimited(text);
+      if (!data.length) return;
+      event.preventDefault();
+
+      const startRow = target.closest('tr').rowIndex - 1;
+      const startCol = target.closest('td').cellIndex - 1;
+
+      data.forEach((row, rIdx) => {
+        row.forEach((val, cIdx) => {
+          const rowEl = table.tBodies[0].rows[startRow + rIdx];
+          if (!rowEl) return;
+          const cell = rowEl.cells[startCol + cIdx + 1];
+          if (!cell) return;
+          const input = cell.querySelector('input');
+          if (input) input.value = val;
+        });
+      });
+    });
+
+    csvInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = parseDelimited(reader.result);
+        fillTable(data);
+      };
+      reader.readAsText(file);
+    });
+
+    async function ensurePyodideReady() {
+      if (typeof pyodideLoaded !== 'undefined' && pyodideLoaded && pyodideInstance) {
+        return true;
+      }
+      if (typeof loadPyodideRuntime === 'function') {
+        try {
+          await loadPyodideRuntime();
+        } catch (err) {
+          statusEl.textContent = 'Failed to load Pyodide runtime.';
+          return false;
+        }
+        const start = Date.now();
+        while (Date.now() - start < 120000) {
+          if (typeof pyodideLoaded !== 'undefined' && pyodideLoaded && pyodideInstance) {
+            return true;
+          }
+          await new Promise(r => setTimeout(r, 200));
+        }
+      }
+      statusEl.textContent = 'Pyodide runtime is not loaded.';
+      return false;
+    }
+
+    analyzeBtn.addEventListener('click', async () => {
+      statusEl.textContent = '';
+      const ok = await ensurePyodideReady();
+      if (!ok) return;
+
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = 'Analyzing...';
+
+      try {
+        const matrix = trimMatrix(getMatrix());
+        const csvText = matrixToCsv(matrix);
+
+        const effectSize = document.querySelector('input[name="effect-size"]:checked').value;
+        const ciValue = parseFloat(document.getElementById('ci').value) || 95;
+        const swarmDotSize = parseFloat(document.getElementById('swarm_dotsize').value) || 5;
+        const esMarkerSize = parseFloat(document.getElementById('es_markersize').value) || 8;
+        const yaxisLabel = document.getElementById('yaxis').value.trim() || 'value';
+        const ylimLowerRaw = document.getElementById('swarmYlimLower').value;
+        const ylimUpperRaw = document.getElementById('swarmYlimUpper').value;
+        const ylimLower = ylimLowerRaw === '' ? null : parseFloat(ylimLowerRaw);
+        const ylimUpper = ylimUpperRaw === '' ? null : parseFloat(ylimUpperRaw);
+
+        const csvB64 = btoa(unescape(encodeURIComponent(csvText)));
+
+        pyodideInstance.globals.set('csv_b64', csvB64);
+        pyodideInstance.globals.set('effect_size', effectSize);
+        pyodideInstance.globals.set('ci_value', ciValue);
+        pyodideInstance.globals.set('swarm_dot_size', swarmDotSize);
+        pyodideInstance.globals.set('es_marker_size', esMarkerSize);
+        pyodideInstance.globals.set('yaxis_label', yaxisLabel);
+        pyodideInstance.globals.set('ylim_lower', ylimLower);
+        pyodideInstance.globals.set('ylim_upper', ylimUpper);
+
+        const plotTarget = document.getElementById('plot-target');
+        const outEl = document.getElementById('out');
+        const statsEl = document.getElementById('stats-table');
+        plotTarget.innerHTML = '';
+        outEl.textContent = '';
+        statsEl.innerHTML = '';
+        document.pyodideMplTarget = plotTarget;
+
+        const resultJson = await pyodideInstance.runPythonAsync(`
+import base64
+import json
+from io import StringIO
+import pandas as pd
+import dabest
+import matplotlib.pyplot as plt
+
+csv_text = base64.b64decode(csv_b64).decode('utf-8')
+
+df = pd.read_csv(StringIO(csv_text))
+df = df.dropna(axis=0, how='all')
+df = df.dropna(axis=1, how='all')
+
+if df.shape[1] < 2:
+    raise ValueError('Please provide at least two data columns.')
+
+idx = tuple(df.columns[:2])
+
+d = dabest.load(df, idx=idx, ci=float(ci_value))
+est = getattr(d, effect_size)
+
+fig = est.plot(
+    raw_label=yaxis_label,
+    swarm_label=yaxis_label,
+    contrast_label=effect_size.replace('_', ' '),
+    swarm_dot_size=float(swarm_dot_size),
+    es_marker_size=float(es_marker_size)
+)
+
+if ylim_lower is not None and ylim_upper is not None:
+    try:
+        for ax in fig.axes:
+            ax.set_ylim(float(ylim_lower), float(ylim_upper))
+    except Exception:
+        pass
+
+plt.tight_layout()
+plt.show()
+
+summary = str(est)
+
+stats_html = ''
+try:
+    res = getattr(est, 'results', None)
+    if res is None:
+        res = getattr(est, '_results', None)
+    if res is not None:
+        stats_html = res.to_html(index=False, classes='stats-table')
+except Exception as e:
+    stats_html = '<p>Could not build stats table: {}</p>'.format(e)
+
+json.dumps({'summary': summary, 'stats_html': stats_html})
+        `);
+
+        const result = JSON.parse(resultJson);
+        outEl.textContent = result.summary || '';
+        statsEl.innerHTML = result.stats_html || '';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = err.message || 'Error running analysis.';
+      } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = 'Analyze';
+      }
+    });
+  })();
+</script>
+
