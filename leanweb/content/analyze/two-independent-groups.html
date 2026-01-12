@@ -599,8 +599,7 @@ est = getattr(d, effect_size)
 fig = est.plot(
     raw_label=yaxis_label,
     contrast_label=effect_size.replace('_', ' '),
-    swarm_dot_size=float(swarm_dot_size),
-    es_marker_size=float(es_marker_size)
+    custom_palette=None
 )
 
 if ylim_lower is not None and ylim_upper is not None:
