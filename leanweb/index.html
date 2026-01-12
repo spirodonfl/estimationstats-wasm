@@ -453,6 +453,14 @@ plt.close('all')  # Clean up after showing
         return;
       }
       
+      if (link.hasAttribute('download')) {
+        return;
+      }
+
+      if (link.href.startsWith('blob:') || link.href.startsWith('data:')) {
+        return;
+      }
+
       if (link.target === '_blank' || link.href.startsWith('http') && !link.href.startsWith(window.location.origin)) {
         return;
       }
