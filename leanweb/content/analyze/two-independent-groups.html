@@ -345,6 +345,12 @@
   .stats-table th {
     background: #f3f3f3;
   }
+  .stats-cell-textarea {
+    max-width: 300px;
+    width: 300px;
+    min-height: 80px;
+    resize: vertical;
+  }
 </style>
 
 <script>
@@ -630,6 +636,7 @@ json.dumps({'summary': summary, 'stats_html': stats_html})
         const result = JSON.parse(resultJson);
         outEl.textContent = result.summary || '';
         statsEl.innerHTML = result.stats_html || '';
+        wrapLongStatsCells(statsEl);
       } catch (err) {
         console.error(err);
         statusEl.textContent = err.message || 'Error running analysis.';
@@ -638,6 +645,43 @@ json.dumps({'summary': summary, 'stats_html': stats_html})
         analyzeBtn.textContent = 'Analyze';
       }
     });
+
+    function wrapLongStatsCells(container) {
+      const table = container.querySelector('table');
+      if (!table) return;
+
+      const longColumns = new Set([
+        'bootstraps',
+        'permutations',
+        'permutations_var',
+        'bec_bootstraps'
+      ]);
+
+      const headers = Array.from(table.querySelectorAll('thead th')).map(th =>
+        th.textContent.trim().toLowerCase()
+      );
+
+      const indices = headers
+        .map((name, idx) => longColumns.has(name) ? idx : -1)
+        .filter(idx => idx >= 0);
+
+      if (indices.length === 0) return;
+
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        indices.forEach(idx => {
+          const cell = row.children[idx];
+          if (!cell) return;
+          const text = cell.textContent;
+          const textarea = document.createElement('textarea');
+          textarea.className = 'stats-cell-textarea';
+          textarea.readOnly = true;
+          textarea.value = text;
+          cell.textContent = '';
+          cell.appendChild(textarea);
+        });
+      });
+    }
   })();
 </script>
 
