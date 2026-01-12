@@ -215,6 +215,11 @@ Test,3.65,4,M
     <div class="col content">
       <div id="plot-target" style="margin: 20px auto; max-width: 900px;"></div>
       <div id="stats-table" class="stats-table-wrap"></div>
+      <div class="download-row">
+        <button id="download-png-btn" class="btn small" disabled>Download PNG</button>
+        <button id="download-svg-btn" class="btn small" disabled>Download SVG</button>
+        <button id="download-csv-btn" class="btn small" disabled>Download CSV</button>
+      </div>
       <pre id="out" style="text-align: left; max-width: 900px; margin: 20px auto; background: #f5f5f5; padding: 15px; border-radius: 8px; overflow-x: auto;"></pre>
     </div>
   </div>
@@ -262,12 +267,30 @@ Test,3.65,4,M
     min-height: 80px;
     resize: vertical;
   }
+  .download-row {
+    display: flex;
+    gap: 12px;
+    margin: 10px 0 20px;
+    flex-wrap: wrap;
+  }
+  .btn.small {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
 </style>
 
 <script>
   (function() {
     const statusEl = document.getElementById('config-status');
     const analyzeBtn = document.getElementById('config-analyze-btn');
+    const downloadPngBtn = document.getElementById('download-png-btn');
+    const downloadSvgBtn = document.getElementById('download-svg-btn');
+    const downloadCsvBtn = document.getElementById('download-csv-btn');
+    const downloadState = {
+      pngBase64: '',
+      svgText: '',
+      csvText: ''
+    };
 
     function setRadio(name, value) {
       const radios = document.querySelectorAll(`input[name="${name}"]`);
@@ -407,6 +430,12 @@ Test,3.65,4,M
 
       analyzeBtn.disabled = true;
       analyzeBtn.textContent = 'Analyzing...';
+      downloadPngBtn.disabled = true;
+      downloadSvgBtn.disabled = true;
+      downloadCsvBtn.disabled = true;
+      downloadState.pngBase64 = '';
+      downloadState.svgText = '';
+      downloadState.csvText = '';
 
       try {
         const plotTarget = document.getElementById('plot-target');
@@ -423,7 +452,7 @@ Test,3.65,4,M
 import ast
 import base64
 import json
-from io import StringIO
+from io import BytesIO, StringIO
 import pandas as pd
 import dabest
 import matplotlib.pyplot as plt
@@ -515,25 +544,54 @@ except TypeError:
 plt.tight_layout()
 plt.show()
 
+if fig is None:
+    fig = plt.gcf()
+
 summary = str(est)
 
 stats_html = ''
+stats_csv = ''
 try:
     res = getattr(est, 'results', None)
     if res is None:
         res = getattr(est, '_results', None)
     if res is not None:
         stats_html = res.to_html(index=False, classes='stats-table')
+        stats_csv = res.to_csv(index=False)
 except Exception as e:
     stats_html = '<p>Could not build stats table: {}</p>'.format(e)
 
-json.dumps({'summary': summary, 'stats_html': stats_html})
+png_b64 = ''
+svg_text = ''
+try:
+    png_buf = BytesIO()
+    fig.savefig(png_buf, format='png', dpi=200)
+    png_b64 = base64.b64encode(png_buf.getvalue()).decode('ascii')
+    svg_buf = StringIO()
+    fig.savefig(svg_buf, format='svg')
+    svg_text = svg_buf.getvalue()
+except Exception:
+    pass
+
+json.dumps({
+    'summary': summary,
+    'stats_html': stats_html,
+    'stats_csv': stats_csv,
+    'plot_png_b64': png_b64,
+    'plot_svg': svg_text
+})
         `);
 
         const result = JSON.parse(resultJson);
         outEl.textContent = result.summary || '';
         statsEl.innerHTML = result.stats_html || '';
         wrapLongStatsCells(statsEl);
+        downloadState.pngBase64 = result.plot_png_b64 || '';
+        downloadState.svgText = result.plot_svg || '';
+        downloadState.csvText = result.stats_csv || '';
+        downloadPngBtn.disabled = !downloadState.pngBase64;
+        downloadSvgBtn.disabled = !downloadState.svgText;
+        downloadCsvBtn.disabled = !downloadState.csvText;
       } catch (err) {
         console.error(err);
         statusEl.textContent = err.message || 'Error running analysis.';
@@ -541,6 +599,38 @@ json.dumps({'summary': summary, 'stats_html': stats_html})
         analyzeBtn.disabled = false;
         analyzeBtn.textContent = 'Analyze';
       }
+    });
+
+    function downloadBlob(filename, mimeType, data) {
+      const blob = new Blob([data], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    downloadPngBtn.addEventListener('click', () => {
+      if (!downloadState.pngBase64) return;
+      const binary = atob(downloadState.pngBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      downloadBlob('dabest-plot.png', 'image/png', bytes);
+    });
+
+    downloadSvgBtn.addEventListener('click', () => {
+      if (!downloadState.svgText) return;
+      downloadBlob('dabest-plot.svg', 'image/svg+xml', downloadState.svgText);
+    });
+
+    downloadCsvBtn.addEventListener('click', () => {
+      if (!downloadState.csvText) return;
+      downloadBlob('dabest-stats.csv', 'text/csv', downloadState.csvText);
     });
   })();
 </script>
