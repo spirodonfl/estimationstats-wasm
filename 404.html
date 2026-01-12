@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Loading...</title>
+    <script>
+        // Root-level GitHub Pages 404.html
+        // Preserve the original path and redirect to leanweb/index.html
+        var currentPath = window.location.pathname;
+        var currentSearch = window.location.search;
+        var currentHash = window.location.hash;
+
+        if (currentPath !== '/' && currentPath !== '/index.html' && currentPath !== '/404.html') {
+            sessionStorage.setItem('__original_path', currentPath);
+            sessionStorage.setItem('__original_search', currentSearch);
+            sessionStorage.setItem('__original_hash', currentHash);
+        }
+
+        // Assume leanweb is the app root under the repo
+        var basePath = '/';
+        if (currentPath.startsWith('/')) {
+            // keep the repo prefix if present
+            var parts = currentPath.split('/').filter(Boolean);
+            if (parts.length > 0) {
+                basePath = '/' + parts[0] + '/';
+            }
+        }
+
+        window.location.replace(basePath + 'leanweb/index.html' + currentSearch + currentHash);
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+    <noscript>
+        <p>JavaScript is required for this site. Please enable JavaScript and refresh the page.</p>
+        <p><a href="./leanweb/index.html">Go to home page</a></p>
+    </noscript>
+</body>
+</html>
