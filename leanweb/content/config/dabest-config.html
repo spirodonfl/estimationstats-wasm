@@ -1,0 +1,202 @@
+<!-- Dabest config form page -->
+<div data-content>
+  <div class="page-title">Dabest Config</div>
+
+  <div class="row">
+    <div class="col content">
+      <p>Configure dabest.load parameters, choose the effect size, and set optional plot styling.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <h3>Step 1: Load data into a dabest object</h3>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label for="config-data">1. data (long format DataFrame)</label>
+      <textarea id="config-data" class="config-textarea" rows="6" placeholder="Paste or describe your long-format dataframe here"></textarea>
+      <div class="hint">User must provide a long-format dataframe.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label for="config-idx">2. idx (tuple/list, can be nested)</label>
+      <input id="config-idx" type="text" placeholder="Example: ((Control 1, Test 1, Test 2), (Control 2, Test 3))">
+      <div class="hint">Groups within each tuple are compared; the first is the control.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label>3. paired</label>
+      <div class="option-row">
+        <label><input type="radio" name="paired" value="baseline"> Baseline</label>
+        <label><input type="radio" name="paired" value="sequential"> Sequential</label>
+        <label><input type="radio" name="paired" value="none" checked> None</label>
+      </div>
+      <div class="hint">Specifies if data is paired and how effect sizes are compared.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label for="config-id-col">4. id_col (required if paired != None)</label>
+      <input id="config-id-col" type="text" placeholder="Column name for pairing identity">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label>5. proportional</label>
+      <div class="option-row">
+        <label><input type="radio" name="proportional" value="true"> True</label>
+        <label><input type="radio" name="proportional" value="false" checked> False</label>
+      </div>
+      <div class="hint">Binary/proportional data changes plot and stats behavior.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label>6. mini_meta</label>
+      <div class="option-row">
+        <label><input type="radio" name="mini_meta" value="true"> True</label>
+        <label><input type="radio" name="mini_meta" value="false" checked> False</label>
+      </div>
+      <div class="hint">Only for multi two-group experiments in idx.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label>7. delta2</label>
+      <div class="option-row">
+        <label><input type="radio" name="delta2" value="true"> True</label>
+        <label><input type="radio" name="delta2" value="false" checked> False</label>
+      </div>
+      <div class="hint">Only for 2x2 configurations in idx. Mutually exclusive with mini_meta.</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label for="config-x">8. x</label>
+      <input id="config-x" type="text" placeholder="Column name (or two names if delta2)">
+      <div class="hint">If delta2, provide two column names (x1, x2).</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label for="config-y">9. y</label>
+      <input id="config-y" type="text" placeholder="Column name for y values">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s4">
+      <label for="config-resamples">10. resamples</label>
+      <input id="config-resamples" type="number" min="1" value="5000">
+    </div>
+    <div class="col s4">
+      <label for="config-ci">11. ci</label>
+      <input id="config-ci" type="number" min="50" max="99.9" value="95">
+    </div>
+    <div class="col s4">
+      <label for="config-seed">12. random_seed</label>
+      <input id="config-seed" type="number" value="12345">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label for="config-experiment">13. experiment (delta2 only)</label>
+      <input id="config-experiment" type="text" placeholder="Experiment column name">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s6">
+      <label for="config-experiment-label">14. experiment_label (delta2 only)</label>
+      <input id="config-experiment-label" type="text" placeholder="Example: Drug, Placebo">
+    </div>
+    <div class="col s6">
+      <label for="config-x1-level">15. x1_level (delta2 only)</label>
+      <input id="config-x1-level" type="text" placeholder="Example: M, W">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <label>16. ps_adjust</label>
+      <div class="option-row">
+        <label><input type="radio" name="ps_adjust" value="true"> True</label>
+        <label><input type="radio" name="ps_adjust" value="false" checked> False</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <h3>Step 2: Select effect size/statistic</h3>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s12">
+      <div class="option-row">
+        <label><input type="radio" name="effect-size" value="mean_diff" checked> mean_diff</label>
+        <label><input type="radio" name="effect-size" value="median_diff"> median_diff</label>
+        <label><input type="radio" name="effect-size" value="cohens_d"> cohens_d</label>
+        <label><input type="radio" name="effect-size" value="hedges_g"> hedges_g</label>
+        <label><input type="radio" name="effect-size" value="cohens_h"> cohens_h</label>
+        <label><input type="radio" name="effect-size" value="cliffs_delta"> cliffs_delta</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col content">
+      <h3>Step 3: Plot design options</h3>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col s6">
+      <label>1. horizontal</label>
+      <div class="option-row">
+        <label><input type="radio" name="horizontal" value="true"> True</label>
+        <label><input type="radio" name="horizontal" value="false" checked> False</label>
+      </div>
+    </div>
+    <div class="col s6">
+      <label for="config-color-col">2. color_col</label>
+      <input id="config-color-col" type="text" placeholder="Column name for color grouping">
+    </div>
+  </div>
+</div>
+
+<style>
+  .config-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: "Courier New", monospace;
+  }
+  .option-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 8px 0 12px;
+  }
+  .hint {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+</style>
